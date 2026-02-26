@@ -6,8 +6,8 @@ from .models import User
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         if instance.role == 'student':
-            from students.models import Student
+            from apps.students.models import Student
             Student.objects.create(user=instance)
         elif instance.role == 'instructor':
-            from instructors.models import Instructor
+            from apps.instructors.models import Instructor
             Instructor.objects.create(user=instance)
