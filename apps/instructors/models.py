@@ -24,10 +24,10 @@ class Instructor(models.Model):
     college = models.ForeignKey(College, on_delete=models.PROTECT, related_name='instructors')
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='instructors')
     rank = models.CharField(max_length=50, choices=[
-        ('محاضر', 'Lecturer'),
-        ('أستاذ مساعد', 'Assistant Professor'),
-        ('أستاذ مشارك', 'Associate Professor'),
-        ('أستاذ', 'Professor'),
+        ('Lecturer', 'محاضر'),
+        ('Assistant Professor', 'أستاذ مساعد'),
+        ('Associate Professor', 'أستاذ مشارك'),
+        ('Professor', 'أستاذ'),
     ], blank=True)
 
     # Contact

@@ -18,6 +18,6 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'section', 'semester', 'year', 'mid_term_grade', 'participation_grade', 'final_term_grade', 'grade')
-    list_filter = ('semester', 'year', 'section__subject__department')
+    list_display = ('student', 'section', 'hour_registration', 'mid_term_grade', 'participation_grade', 'final_term_grade', 'grade')
+    list_filter = ('hour_registration__semester', 'hour_registration__year', 'section__subject__department')
     search_fields = ('student__first_name', 'student__last_name', 'student__student_id')
