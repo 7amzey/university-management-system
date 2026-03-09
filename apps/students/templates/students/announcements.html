@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}الاعلانات{% endblock %}
+
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">الاعلانات</h2>
+            </div>
+            <hr>
+
+            {% if announcements %}
+                {% for announcement in announcements %}
+                    <div class="card shadow-sm mb-3
+                        {% if last_seen is None or announcement.created_at > last_seen %}border-start border-primary border-3{% endif %}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="fw-bold mb-1">{{ announcement.title }}</h6>
+                                    <p class="mb-0 text-muted">{{ announcement.body }}</p>
+                                </div>
+                                <div class="text-muted text-nowrap ms-3" style="font-size:.8rem;">
+                                    {{ announcement.created_at|date:"d/m/Y" }}
+                                    <br>
+                                    {{ announcement.created_at|time:"H:i" }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="card border-0 shadow-sm p-5 text-center text-muted">
+                    <i class="bi bi-bell-slash fs-1 d-block mb-3"></i>
+                    لا توجد إشعارات
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

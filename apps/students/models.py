@@ -65,9 +65,13 @@ class Student(models.Model):
         ('Dropped', 'منسحب'),
     ], blank=True)
     enrollment_year = models.IntegerField(null=True, blank=True)
-    # students/models.py inside Student class
+    
+    # Minimum and maximum hours allowed for enrollment
     min_hours = models.IntegerField(default=12)
     max_hours = models.IntegerField(default=18)
+
+    # Track when the student last checked announcements to count new ones since then
+    announcements_last_seen = models.DateTimeField(null=True, blank=True) 
 
     # Contact
     phone_number = models.CharField(max_length=10, blank=True, null=True)

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'apps.courses',
     'apps.students.apps.StudentsConfig',
     'apps.finance',
+    'apps.announcements.apps.AnnouncementsConfig',
 ]
 
 MIDDLEWARE = [
@@ -68,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.students.context_processors.announcement_count',
             ],
         },
     },

@@ -9,6 +9,8 @@ from apps.courses.models import Subject, CourseSection, ExamSchedule
 from django.db.models import Sum, F
 from django.db import models as db_models
 from apps.courses.constants import SUBJECT_TYPES
+from django.utils import timezone
+from apps.announcements.models import Announcement
 
 
 
@@ -354,6 +356,26 @@ def subject_catalog(request):
         'passed_enrollments': passed_enrollments,
     }
     return render(request, 'students/subject_catalog.html', context)
+
+@student_required
+def announcements(request):
+    student = request.user.student_profile
+    last_seen = student.announcements_last_seen
+
+    # fetch global + student-specific announcements
+    student_announcements = Announcement.objects.filter(
+        db_models.Q(student=student) | db_models.Q(student__isnull=True)
+    ).order_by('-created_at')
+
+    # update last seen to now so badge resets
+    student.announcements_last_seen = timezone.now()
+    student.save(update_fields=['announcements_last_seen'])
+
+    context = {
+        'announcements': student_announcements,
+        'last_seen': last_seen,
+    }
+    return render(request, 'students/announcements.html', context)
 
 
 @student_required
