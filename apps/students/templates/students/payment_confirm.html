@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}تأكيد الدفع{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center mt-5">
+        <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+
+                    <i class="bi bi-person-circle fs-1 text-primary mb-3 d-block"></i>
+                    <h5 class="fw-bold mb-1">{{ student.first_name_ar }} {{ student.last_name_ar }}</h5>
+                    <p class="text-muted mb-4">{{ student.student_id }}</p>
+
+                    <!-- Total amount -->
+                    <div class="alert alert-warning py-3 mb-4">
+                        <div class="text-muted small mb-1">المبلغ الإجمالي المستحق</div>
+                        <div class="fs-2 fw-bold">{{ total_pending|floatformat:2 }} JD</div>
+                    </div>
+
+                    <!-- Student info -->
+                    <div class="card bg-body-secondary border-0 mb-4 text-start">
+                        <div class="card-body">
+                            <div class="row g-2 small">
+                                <div class="col-5 text-muted">الكلية:</div>
+                                <div class="col-7 fw-semibold">{{ student.college }}</div>
+
+                                <div class="col-5 text-muted">التخصص:</div>
+                                <div class="col-7 fw-semibold">{{ student.major }}</div>
+
+                                <div class="col-5 text-muted">الدرجة العلمية:</div>
+                                <div class="col-7 fw-semibold">{{ student.get_degree_display }}</div>
+
+                                <div class="col-5 text-muted">سنة الالتحاق:</div>
+                                <div class="col-7 fw-semibold">{{ student.enrollment_year }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions breakdown -->
+                    {% if pending_transactions %}
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm text-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th>الوصف</th>
+                                    <th>المبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in pending_transactions %}
+                                <tr>
+                                    <td>{{ t.get_fee_type_display }}</td>
+                                    <td class="fw-bold">{{ t.amount|floatformat:2 }} JD</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if total_pending > 0 %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100 mb-2">
+                            <i class="bi bi-check-circle me-1"></i> دفع
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill me-1"></i>
+                        لا توجد مبالغ مستحقة على هذا الطالب
+                    </div>
+                    {% endif %}
+
+                    <a href="{% url 'apps.students:payment_lookup' %}" class="btn btn-outline-secondary w-100">
+                        رجوع
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

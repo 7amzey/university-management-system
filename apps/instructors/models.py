@@ -21,8 +21,8 @@ class Instructor(models.Model):
 
     # University information
     employee_id = models.CharField(max_length=10, unique=True)
-    college = models.ForeignKey(College, on_delete=models.PROTECT, related_name='instructors')
-    department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='instructors')
+    college = models.ForeignKey(College, on_delete=models.PROTECT, related_name='instructors', null=True, blank=True)
+    department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='instructors', null=True, blank=True)
     rank = models.CharField(max_length=50, choices=[
         ('Lecturer', 'محاضر'),
         ('Assistant Professor', 'أستاذ مساعد'),

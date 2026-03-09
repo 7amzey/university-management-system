@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'apps.academics',
     'apps.instructors',
     'apps.courses',
-    'apps.students',
+    'apps.students.apps.StudentsConfig',
     'apps.finance',
 ]
 
@@ -61,7 +61,7 @@ ROOT_URLCONF = 'university_management_system.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -104,6 +104,14 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # keeps /admin/ working
+    'apps.accounts.backends.StudentBackend',
+    'apps.accounts.backends.InstructorBackend',
+]
+
+SESSION_COOKIE_NAME = 'sessionid'
 
 
 # Internationalization

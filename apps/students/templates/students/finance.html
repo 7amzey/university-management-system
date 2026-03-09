@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}المالية{% endblock %}
+
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">المالية</h2>
+            </div>
+            <hr>
+            <div class="row row-cols-1 row-cols-md-2 g-2 mb-2">
+                <div class="col">
+                    <div class="d-flex flex-column bg-primary bg-opacity-25 border border-2 border-primary rounded-3 p-3 h-100 justify-content-between">
+                        <h5 class="fw-semibold">المبالغ المدفوعة</h5>
+                        <span class="fs-4 mt-2">{{ total_payments|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="d-flex flex-column bg-danger bg-opacity-25 border border-2 border-danger rounded-3 p-3 h-100 justify-content-between">
+                        <h5 class="fw-semibold">المبالغ المستحقة</h5>
+                        <span class="fs-4 mt-2">{{ pending|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3 px-3">
+                <form class="p-0" dir="ltr" method="POST">
+                    {% csrf_token %}
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-secondary" type="submit" id="button-addon1">تسجيل</button>
+                        <input  type="number"
+                                name="requested_hours"
+                                class="form-control text-end"
+                                placeholder="ادخل عدد الساعات المراد تسجيلها"
+                                min="{{ student.min_hours }}"
+                                max="{{ student.max_hours }}"
+                                value="{{ existing_reg.requested_hours|default:'' }}"
+                        >
+                    </div>
+                    {% if existing_reg %}
+                        <small class="text-muted text-end d-block">
+                            {% if existing_reg %}
+                                ساعاتك الحالية المسجلة: <strong>{{ existing_reg.requested_hours }}</strong> ساعة —
+                            {% endif %}
+                            يمكنك التسجيل بين <strong>{{ student.min_hours }}</strong> و <strong>{{ student.max_hours }}</strong> ساعة
+                            {% if existing_reg and existing_reg.is_paid %}
+                                — <span class="text-warning">تم الدفع، أي زيادة ستُحتسب عليك وأي تخفيض سيُسترد لك</span>
+                            {% endif %}
+                        </small>
+                    {% endif %}
+                </form>
+            </div>
+
+            <div class="row mt-3 px-3">
+                <table class="table table-bordered table-striped table-hover text-center">
+                    <thead>
+                        <tr>
+                            <th scope="col">التاريخ</th>
+                            <th scope="col">النوع</th>
+                            <th scope="col">المبلغ</th>
+                            <th scope="col">الوصف</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.date|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if transaction.transaction_type == 'charge' %}
+                                    <span class="badge bg-danger">مستحق</span>
+                                {% elif transaction.transaction_type == 'payment' %}
+                                    <span class="badge bg-success">مدفوع</span>
+                                {% else %}
+                                    <span class="badge bg-info">مسترد</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.amount|floatformat:2 }}</td>
+                            <td>{{ transaction.get_fee_type_display }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center">لا توجد معاملات</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

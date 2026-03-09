@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% block title %}كشف العلامات{% endblock %}
+{% block content %}
+
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">كشف العلامات</h2>
+            </div>
+            <hr>
+            <!-- Cumulative GPA card -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="text-muted small mb-1">المعدل التراكمي الكلي</div>
+                        <div class="fs-1 fw-bold">
+                            {{ cumulative_gpa|default:"0.00" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="text-muted small mb-1">ساعات النجاح التراكمية</div>
+                        <div class="fs-1 fw-bold">
+                            {{ student.passed_hours }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="text-muted small mb-1">عدد الفصول</div>
+                        <div class="fs-1 fw-bold">
+                            {{ semesters|length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semester accordion -->
+            {% if semesters %}
+            <div class="accordion" id="semestersAccordion">
+                {% for sem in semesters %}
+                    <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-bold"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#sem{{ forloop.counter }}"
+                                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+
+                                <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                                    <span>{{ sem.reg.get_semester_display }} {{ sem.reg.year }}</span>
+                                    <div class="d-flex gap-3">
+                                        <span class="badge bg-primary">
+                                            معدل الفصل: {{ sem.semester_gpa|default:"—" }}
+                                        </span>
+                                        <span class="badge bg-secondary">
+                                            {{ sem.total_hours }} ساعة
+                                        </span>
+                                    </div>
+                                </div>
+
+                            </button>
+                        </h2>
+
+                        <div id="sem{{ forloop.counter }}"
+                            class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                            data-bs-parent="#semestersAccordion">
+
+                            <div class="accordion-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-striped mb-0 text-center">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-end">المادة</th>
+                                                <th>الساعات</th>
+                                                <th>الرمز</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for enrollment in sem.enrollments %}
+                                                <tr>
+                                                    <td class="text-end fw-semibold">
+                                                        {{ enrollment.section.subject.name }}
+                                                        <div class="text-muted" style="font-size:.75rem;">
+                                                            {{ enrollment.section.subject.code }}
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ enrollment.section.subject.hours }}</td>
+                                                    <td>
+                                                        {% if enrollment.symbol %}
+                                                            <span class="badge
+                                                                {% if enrollment.symbol == 'A' or enrollment.symbol == 'A-' %}bg-success
+                                                                {% elif enrollment.symbol == 'B+' or enrollment.symbol == 'B' or enrollment.symbol == 'B-' %}bg-primary
+                                                                {% elif enrollment.symbol == 'C+' or enrollment.symbol == 'C' or enrollment.symbol == 'C-' %}bg-warning text-dark
+                                                                {% elif enrollment.symbol == 'D+' or enrollment.symbol == 'D' %}bg-orange text-dark
+                                                                {% else %}bg-danger
+                                                                {% endif %}
+                                                                fs-6 px-3">
+                                                                {{ enrollment.symbol }}
+                                                            </span>
+                                                        {% else %}
+                                                            <span class="text-muted">لم يحدد بعد</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="table-active fw-bold">
+                                                <td class="text-end">معدل الفصل</td>
+                                                <td>{{ sem.total_hours }}</td>
+                                                <td colspan="2"></td>
+                                                <td class="text-primary fs-6">{{ sem.semester_gpa|default:"—" }}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="card border-0 shadow-sm p-5 text-center text-muted">
+                <i class="bi bi-journal-x fs-1 d-block mb-3"></i>
+                لا يوجد سجل علامات بعد
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+
+{% endblock %}

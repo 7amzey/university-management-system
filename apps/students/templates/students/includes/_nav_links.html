@@ -1,0 +1,57 @@
+<a href="{% url 'apps.students:dashboard' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-house-fill flex-shrink-0 fs-5"></i>
+    <span class="link-label">الصفحة الرئيسية</span>
+</a>
+<a href="{% url 'apps.students:finance' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-wallet2 flex-shrink-0 fs-5"></i>
+    <span class="link-label">المالية</span>
+</a>
+<a href="#" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-pencil-square flex-shrink-0 fs-5"></i>
+    <span class="link-label">التسجيل</span>
+</a>
+<div>
+    <button
+        class="nav-link text-white d-flex gap-2 rounded px-3 py-2 w-100 border-0 bg-transparent"
+        data-bs-toggle="collapse"
+        data-bs-target="#submenuCourses"
+        aria-expanded="false"
+        aria-controls="submenuCourses">
+        <i class="bi bi-bar-chart-fill flex-shrink-0 fs-5"></i>
+        <span class="link-label flex-grow-1 text-end me-2 my-auto">العلامات</span>
+        <i class="bi bi-chevron-down link-label ms-auto my-auto" style="font-size:.75rem; transition: transform .25s;" id="submenuCoursesIcon"></i>
+    </button>
+
+    <div class="collapse" id="submenuCourses">
+        <div class="d-flex flex-column ps-3 mt-1 gap-1">
+            <a href="{% url 'apps.students:current_grades' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2">
+                <i class="bi bi-circle flex-shrink-0" style="font-size:.5rem"></i>
+                <span class="link-label">علامات الفصل</span>
+            </a>
+            <a href="{% url 'apps.students:grade_history' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2">
+                <i class="bi bi-circle flex-shrink-0" style="font-size:.5rem"></i>
+                <span class="link-label">كشف العلامات</span>
+            </a>
+        </div>
+    </div>
+</div>
+<a href="{% url 'apps.students:subject_catalog' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-map-fill flex-shrink-0 fs-5"></i>
+    <span class="link-label">الخطة المفرغة</span>
+</a>
+<a href="#" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-megaphone-fill flex-shrink-0 fs-5"></i>
+    <span class="link-label">الاعلانات</span>
+</a>
+<a href="#" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-question-circle-fill flex-shrink-0 fs-5"></i>
+    <span class="link-label">المساعدة</span>
+</a>
+<a href="#" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-person-circle flex-shrink-0 fs-5"></i>
+    <span class="link-label">معلوماتي</span>
+</a>
+<a href="{% url 'apps.students:logout' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
+    <i class="bi bi-box-arrow-left flex-shrink-0 fs-5"></i>
+    <span class="link-label">خروج</span>
+</a>

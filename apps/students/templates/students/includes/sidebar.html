@@ -1,0 +1,91 @@
+{% load static %}
+<!-- DESKTOP SIDEBAR -->
+<div id="desktopSidebar" class="bg-primary position-fixed top-0 end-0 vh-100 d-none d-md-flex flex-column z-3">
+
+    <div class="flex-shrink-0 d-flex align-items-center gap-2 px-3 border-bottom border-white border-opacity-25" style="min-height:64px;">
+        <img src="{% static 'images/logo.png' %}" alt="University Logo" class="d-block" style="height: 40px;">
+        <div class="link-label text-white">
+            <div class="fw-bold" style="font-size:.9rem">جامعة البلقاء التطبيقية</div>
+            <div class="opacity-75" style="font-size:.75rem">كلية الهندسة التكنولوجية</div>
+        </div>
+    </div>
+
+    <nav class="flex-grow-1 overflow-y-auto p-2">
+        {% include "students/includes/_nav_links.html" %}
+    </nav>
+
+    <!-- Theme toggle -->
+    <div class="theme-buttons flex-shrink-0 px-2 pt-2 border-top border-white border-opacity-25 d-flex justify-content-center gap-2">
+        <button onclick="toggleTheme('light')" id="desktopLightBtn"
+                class="btn btn-sm d-flex align-items-center justify-content-center text-white border-0"
+                style="background:rgba(255,255,255,0.15); width:36px; height:36px;">
+            <i class="bi bi-sun-fill"></i>
+        </button>
+        <button onclick="toggleTheme('dark')" id="desktopDarkBtn"
+                class="btn btn-sm d-flex align-items-center justify-content-center text-white border-0"
+                style="background:rgba(255,255,255,0.15); width:36px; height:36px;">
+            <i class="bi bi-moon-fill"></i>
+        </button>
+    </div>
+
+    <!-- Collapse button -->
+    <div class="flex-shrink-0 p-2">
+        <button onclick="toggleDesktop()"
+                class="btn w-100 d-flex align-items-center justify-content-center gap-2 text-white border-0"
+                style="background:rgba(255,255,255,0.15)">
+            <i class="bi bi-chevron-right flex-shrink-0" id="collapseIcon"></i>
+            <span class="link-label" style="font-size:.82rem">اغلق القائمة</span>
+        </button>
+    </div>
+</div>
+
+
+<!-- MOBILE SIDEBAR -->
+<div class="offcanvas offcanvas-end bg-primary d-md-none"
+     tabindex="-1"
+     id="mobileSidebar"
+     style="width:240px;">
+
+    <div class="offcanvas-body">
+
+        <!-- Header -->
+        <div class="flex-shrink-0 d-flex align-items-center gap-2 px-3 border-bottom border-white border-opacity-25" style="min-height:64px;">
+            <img src="{% static 'images/logo.png' %}" alt="University Logo" class="d-block" style="height: 40px;">
+            <div class="text-white">
+                <div class="fw-bold" style="font-size:.9rem">جامعة البلقاء التطبيقية</div>
+                <div class="opacity-75" style="font-size:.75rem">كلية الهندسة التكنولوجية</div>
+            </div>
+        </div>
+
+        <!-- Nav -->
+        <nav class="p-2 flex-grow-1 overflow-y-auto" style="min-height:0;">
+            {% include "students/includes/_nav_links.html" %}
+        </nav>
+
+        <!-- Theme toggle -->
+        <div class="theme-buttons flex-shrink-0 px-2 pt-2 border-top border-white border-opacity-25 d-flex justify-content-center gap-2">
+            <button onclick="toggleTheme('light')" id="mobileLightBtn"
+                    class="btn btn-sm d-flex align-items-center justify-content-center text-white border-0"
+                    style="background:rgba(255,255,255,0.15); width:36px; height:36px;">
+                <i class="bi bi-sun-fill"></i>
+            </button>
+            <button onclick="toggleTheme('dark')" id="mobileDarkBtn"
+                    class="btn btn-sm d-flex align-items-center justify-content-center text-white border-0"
+                    style="background:rgba(255,255,255,0.15); width:36px; height:36px;">
+                <i class="bi bi-moon-fill"></i>
+            </button>
+        </div>
+
+        <!-- Close button -->
+        <div class="flex-shrink-0 p-2">
+            <button type="button"
+                    data-bs-dismiss="offcanvas"
+                    class="btn w-100 d-flex align-items-center justify-content-center gap-2 text-white border-0"
+                    style="background:rgba(255,255,255,0.15)">
+                <i class="bi bi-chevron-right"></i>
+                <span style="font-size:.82rem">اغلق القائمة</span>
+            </button>
+        </div>
+
+    </div>
+</div>

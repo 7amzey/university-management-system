@@ -3,19 +3,19 @@ from apps.students.models import Student
 
 
 class Transaction(models.Model):
-    TRANSACTION_TYPES = [
-        ('Charge', 'مطلوب'),
-        ('Payment', 'مدفوع'),
-    ]
-
     FEE_TYPES = [
-        ('registration', 'رسوم تسجيل'),
-        ('semester',     'رسوم فصل'),
-        ('late',         'رسوم تأخير'),
-        ('clinic',       'رسوم استخدام العيادة'),
-        ('transcript',   'رسوم اصدار اثبات طالب'),
-        ('clearance',    'رسوم براءة ذمة'),
-        ('other',        'رسوم أخرى'),
+        ( 'registration','رسوم تسجيل'),
+        ('semester', 'رسوم فصل'),
+        ('late', 'رسوم تأخير'),
+        ('clinic', 'رسوم استخدام العيادة'),
+        ('transcript', 'رسوم اصدار اثبات طالب'),
+        ('clearance', 'رسوم براءة ذمة'),
+        ('other', 'رسوم أخرى'),
+    ]
+    TRANSACTION_TYPES = [
+        ('charge', 'مستحق'),
+        ('payment', 'مدفوع'),
+        ('refund', 'مسترد'),
     ]
 
     student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name='transactions')
@@ -31,6 +31,8 @@ class Transaction(models.Model):
     year = models.IntegerField(null=True, blank=True)
     note = models.TextField(blank=True)
     is_system_generated = models.BooleanField(default=False)
+    is_paid = models.BooleanField(default=False)
+    is_service = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         'accounts.User',
         on_delete=models.PROTECT,

@@ -1,0 +1,82 @@
+// 1. Import functions first
+@import "bootstrap/functions";
+
+// 2. Custom variables
+$portal: #119F61;
+$primary: $portal;
+$bootstrapBlue: #0d6efd;
+$min-contrast-ratio: 3.0;
+
+// 3. Bootstrap variables
+@import "bootstrap/variables";
+
+// 4. Theme colors
+$theme-colors: map-merge(
+  $theme-colors,
+  (
+    "bootstrapBlue": $bootstrapBlue,
+    "portal": $portal
+  )
+);
+
+// 5. Bootstrap
+@import "bootstrap/bootstrap";
+
+// 6. Desktop sidebar
+#desktopSidebar {
+    width: 240px;
+    transition: width 0.3s ease;
+
+    &.collapsed {
+        width: 64px;
+
+        .nav-link {
+            justify-content: center;
+            padding-left: 0;
+            padding-right: 0;
+            gap: 0;
+        }
+
+        .link-label {
+            display: none;
+        }
+    }
+}
+
+#desktopSidebar.collapsed .theme-buttons {
+    flex-direction: column;
+    align-items: center;
+}
+
+#main-content {
+    margin-right: 240px;
+    transition: margin-right 0.3s ease;
+
+    &.sidebar-collapsed {
+        margin-right: 64px;
+    }
+
+    @include media-breakpoint-down(md) {
+        margin-right: 0 !important;
+    }
+}
+// 7. Mobile sidebar
+#mobileSidebar {
+    .offcanvas-body {
+        overflow: hidden !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+}
+
+#mobileSidebarToggle {
+  background-color: transparent !important;
+  color: var(--bs-emphasis-color) !important;
+  border-color: var(--bs-emphasis-color) !important;
+}
+
+#mobileSidebarToggle:hover {
+  background-color: var(--bs-emphasis-color) !important;
+  color: var(--bs-body-bg) !important;
+}

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}دخول الى البوابة الالكترونية{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div class="p-0 min-vh-100 d-flex align-items-center justify-content-center" dir="rtl">
+            <div class="row row-lg-cols-2 w-100 justify-content-center gy-4 gy-lg-0 gx-4 my-auto">
+
+
+                <!-- RIGHT CARD -->
+                <div class="col-12 col-lg-4 mt-0">
+                    <div class="card shadow-sm">
+                        <div class="card-body text-center">
+
+                            <img src="{% static 'images/logo.png' %}" alt="University Logo" class="d-block mx-auto mb-3 mt-1" style="height: 80px;">
+
+                            <h5 class="fw-bold mb-3">دخول الطلاب</h5>
+
+                            <form method="post">
+                            {% csrf_token %}
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="floatingInput" placeholder="رقم الطالب" name="student_id">
+                                <label for="floatingInput" class="text-end w-100" style="transform-origin: right top">رقم الطالب</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input type="password" class="form-control" id="floatingPassword" placeholder="كلمة السر" name="password">
+                                <label for="floatingPassword" class="text-end w-100" style="transform-origin: right top">كلمة السر</label>
+                            </div>
+
+                            <button class="btn btn-portal w-100">
+                                دخول
+                            </button>
+                            <a href="#" class="d-block mt-3 link-offset-2">
+                                نسيت كلمة السر؟
+                            </a>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- LEFT CARD -->
+                <div class="col-12 col-lg-8">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center d-flex flex-column justify-content-center">
+
+                            <h4 class="fw-bold mb-2 mt-lg-auto mt-3">نظام التسجيل الإلكتروني</h4>
+                            <p class="text-muted mb-4">كلية الهندسة التكنولوجية</p>
+
+                            <p class="fw-semibold mb-2">روابط هامة:</p>
+
+                            <div class="d-grid gap-2 col-8 col-md-6 mx-auto">
+                                <a href="#" class="btn btn-secondary">
+                                    بوابة البلقاء الإلكترونية
+                                </a>
+                                <a href="#" class="btn btn-secondary">
+                                    تقييم المدرسين
+                                </a>
+                            </div>
+
+                            <!-- Theme toggle (optional) -->
+                            <div class="mt-lg-auto mt-4">
+                                <i class="bi bi-brightness-high-fill" id="theme-toggle-light" style="cursor:pointer;" onclick="toggleTheme('light')"></i>
+                                <i class="bi bi-moon-stars-fill" id="theme-toggle-dark" style="cursor:pointer;" onclick="toggleTheme('dark')"></i>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+{% endblock %}

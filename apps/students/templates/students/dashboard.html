@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}بوابة الطالب{% endblock %}
+
+
+{% block content %}
+    <!-- Sidebar -->
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">مرحبا، {{ student.first_name_ar }} {{ student.last_name_ar }} ...</h2>
+            </div>
+            <hr>
+            <h4 class="mb-3">محاضرات اليوم</h4>
+            <div class="row g-4 px-2">
+                {% for enrollment in current_enrollments %}
+                    <div class="col-md-4 col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ enrollment.course.name_ar }}</h5>
+                                <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 p-5 text-center rounded-3 fw-bold border">
+                        لا توجد محاضرات   
+                    </div>
+                {% endfor %}
+            </div>
+            <hr>
+            <h4 class="mb-3 mt-3">معلومات الطالب</h4>
+            <div class="row gap-3 px-2">
+                <div class="col-md-6 col-12 rounded-3 p-3 border">
+                    <p><strong>الاسم بالعربية:</strong> {{ student.first_name_ar }} {{ student.father_name_ar }} {{ student.grandfather_name_ar }} {{ student.last_name_ar }}</p>
+                    <p><strong>الرقم الوطني:</strong> {{ student.national_id }}</p>
+                    <p><strong>رقم الطالب:</strong> {{ student.student_id }}</p>
+                    <p class="mb-0"><strong>الحالة الأكاديمية:</strong> {{ student.get_academic_status_display }}</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center justify-content-between py-3 px-2 rounded-3 border">
+                    <div></div> <!-- empty spacer -->
+                    <span class="display-4 fw-bold">{{ student.passed_hours }}</span>
+                    <p class="mt-2 mt-md-0 mb-0">ساعات النجاح المعتمدة</p>
+                </div>
+                <div class="col d-flex flex-column align-items-center justify-content-between py-3 px-2 rounded-3 border">
+                    <div></div> <!-- empty spacer -->
+                    <span class="display-4 fw-bold">{{ student.gpa }}</span>
+                    <p class="mt-2 mt-md-0 mb-0">معدل الطالب التراكمي</p>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-6 col-12">
+                    {% if midterm_exams %}
+                        <h4 class="mb-3 mt-3">جدول الاختبارات النصفية</h4>
+                    {% elif final_exams %}
+                        <h4 class="mb-3 mt-3">جدول الاختبارات النهائية</h4>
+                    {% else %}
+                        <h4 class="mb-3 mt-3">جدول الاختبارات</h4>
+                    {% endif %}
+                    <table class="table table-striped table-bordered text-center align-middle table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">المادة</th>
+                                <th scope="col">تاريخ الاختبار</th>
+                                <th scope="col">الوقت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if midterm_exams %}
+                                {% for exam in midterm_exams %}
+                                    <tr>
+                                        <td>{{ exam.section.subject.name }}</td>
+                                        <td>{{ exam.date|date:"Y-m-d" }}</td>
+                                        <td>{{ exam.time|time:"H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% elif final_exams %}
+                                {% for exam in final_exams %}
+                                    <tr>
+                                        <td>{{ exam.section.subject.name }}</td>
+                                        <td>{{ exam.date|date:"Y-m-d" }}</td>
+                                        <td>{{ exam.time|time:"H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">لا توجد اختبارات قادمة</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6 col-12">
+                    <h4 class="mb-3 mt-3">غيابات الطالب</h4>
+                    <table class="table table-striped table-bordered text-center align-middle table-hover">
+                        <thead>
+                            <tr>
+                                <th scope="col">المادة</th>
+                                <th scope="col">عدد الغيابات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for absence in absences %}
+                                <tr>
+                                    <td>{{ absence.enrollment.section.subject.name }}</td>
+                                    <td>{{ absence.count }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">لا توجد غيابات مسجلة</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>    
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+{% endblock %}

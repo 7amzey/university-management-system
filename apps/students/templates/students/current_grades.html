@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}العلامات الفصلية{% endblock %}
+
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">العلامات الفصلية</h2>
+            </div>
+            <hr>
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h5 class="fw-bold mb-0">
+                    علامات {{ current_semester }} {{ current_year }}
+                </h5>
+                <a href="{% url 'apps.students:grade_history' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-clock-history me-1"></i> السجل الكامل
+                </a>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered table-hover mb-0 text-center">
+                        <thead>
+                            <tr>
+                                <th scope="col">رمز المادة</th>
+                                <th scope="col">المادة</th>
+                                <th scope="col">علامة النصفي</th>
+                                <th scope="col">علامة المشاركة</th>
+                                <th scope="col">علامة النهائي</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for enrollment in enrollments %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <code>{{ enrollment.section.subject.code }}</code>
+                                </td>
+                                <td class="fw-semibold">
+                                    {{ enrollment.section.subject.name }}
+                                    <div class="text-muted" style="font-size:.75rem;">{{ enrollment.section.subject.code }}</div>
+                                </td>
+                                <td>
+                                    {% if enrollment.mid_term_grade is not None %}
+                                        <span class="fw-bold">{{ enrollment.mid_term_grade }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if enrollment.participation_grade is not None %}
+                                        <span class="fw-bold">{{ enrollment.participation_grade }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if enrollment.final_term_grade is not None %}
+                                        <span class="fw-bold">{{ enrollment.final_term_grade }}</span>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-journal-x fs-3 d-block mb-2"></i>
+                                    لا توجد مواد مسجلة في هذا الفصل
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

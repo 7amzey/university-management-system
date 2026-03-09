@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load student_tags %}
+{% block title %}الخطة الدراسية{% endblock %}
+
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">الخطة المفرغة</h2>
+            </div>
+            <hr>
+            <!-- Summary cards -->
+            <div class="row gap-2 px-2 mb-4">
+                <div class="col shadow-sm d-flex flex-column align-items-center justify-content-between py-3 px-2 rounded-3 border">
+                    <div></div> <!-- empty spacer -->
+                    <span class="fs-2 fw-bold">{{ student.passed_hours }}</span>
+                    <p class="text-muted small mt-2 mt-md-0 mb-0">ساعات النجاح المعتمدة</p>
+                </div>
+                <div class="col shadow-sm d-flex flex-column align-items-center justify-content-between py-3 px-2 rounded-3 border">
+                    <div></div> <!-- empty spacer -->
+                    <span class="fs-2 fw-bold">{{ student.major.hours }}</span>
+                    <p class="text-muted small mt-2 mt-md-0 mb-0">إجمالي ساعات التخصص</p>
+                </div>
+            </div>
+
+            <!-- Catalog accordion -->
+            <div class="accordion" id="catalogAccordion">
+                {% for type_label, data in catalog.items  %}
+                    <div class="accordion-item border-0 border-bottom shadow-sm mb-3 overflow-hidden">
+
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-bold"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#cat{{ forloop.counter }}"
+                                    aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
+
+                                <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                                    <span>{{ type_label }}</span>
+                                    <div class="d-flex gap-2 ms-2">
+                                        <span class="badge bg-primary rounded-pill px-3">
+                                            {{ data.passed_hours }}
+                                        </span>
+                                        {% if data.required_hours %}
+                                            <span class="badge bg-bootstrapBlue rounded-pill px-3">
+                                                {{ data.required_hours }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                            </button>
+                        </h2>
+
+                        <div id="cat{{ forloop.counter }}"
+                             class="accordion-collapse collapse {% if forloop.first %}show{% endif %}"
+                             data-bs-parent="#catalogAccordion">
+                                <div class="accordion-body p-0">
+                                    <div class="table-responsive-md">
+                                        <table class="table table-striped table-hover mb-0">
+                                            <thead>
+                                                <tr class="text-center">
+                                                    <th>رمز المادة</th>
+                                                    <th>اسم المادة</th>
+                                                    <th>الساعات</th>
+                                                    <th>النتيجة</th>
+                                                    <th>المتطلب السابق</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for subject in data.subjects %}
+                                                    <tr class="text-center
+                                                        {% if subject.id in passed_subject_ids %}table-success
+                                                        {% elif subject.id in enrolled_subject_ids %}table-warning
+                                                        {% endif %}">
+                                                        <td><code>{{ subject.code }}</code></td>
+                                                        <td>{{ subject.name }}</td>
+                                                        <td>{{ subject.hours }}</td>
+                                                        <td>
+                                                            {% if subject.id in passed_enrollments %}
+                                                                <span class="badge
+                                                                            {% with sym=passed_enrollments|get_item:subject.id %}
+                                                                                {% if sym == 'A' or sym == 'A-' %}bg-success
+                                                                                {% elif sym == 'B+' or sym == 'B' or sym == 'B-' %}bg-primary
+                                                                                {% elif sym == 'C+' or sym == 'C' or sym == 'C-' %}bg-warning text-dark
+                                                                                {% elif sym == 'D+' or sym == 'D' %}bg-orange text-dark
+                                                                                {% else %}bg-danger
+                                                                                {% endif %}
+                                                                            {% endwith %}
+                                                                            fs-6">
+                                                                    {{ passed_enrollments|get_item:subject.id }}
+                                                                </span>
+                                                            {% else %}
+                                                                <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if subject.prerequisites.all %}
+                                                                {% for prereq in subject.prerequisites.all %}
+                                                                <span class="badge {% if prereq.id in passed_subject_ids %}bg-success{% else %}bg-danger{% endif %} me-1">
+                                                                    {{ prereq.code }}
+                                                                </span>
+                                                                {% endfor %}
+                                                            {% else %}
+                                                                <span class="text-muted">—</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

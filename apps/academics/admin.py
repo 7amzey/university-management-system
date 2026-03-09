@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import College, Department, Major
+from .models import College, Department, Major, MajorSubjectRequirement
 
 class DepartmentInline(admin.TabularInline):
     model = Department
@@ -20,7 +20,12 @@ class DepartmentAdmin(admin.ModelAdmin):
     list_filter = ('college',)
     inlines = [MajorInline]
 
+class MajorSubjectRequirementInline(admin.TabularInline):
+    model = MajorSubjectRequirement
+    extra = 6
+    fields = ('subject_type', 'required_hours')
+
 @admin.register(Major)
 class MajorAdmin(admin.ModelAdmin):
     list_display = ('name', 'department', 'hours')
-    list_filter = ('department__college', 'department')
+    inlines = [MajorSubjectRequirementInline]

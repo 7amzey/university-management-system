@@ -35,7 +35,7 @@ class Student(models.Model):
     high_school_district = models.CharField(max_length=50, blank=True)
 
     # University information
-    student_id = models.CharField(max_length=10, unique=True, null=True, blank=True)
+    student_id = models.CharField(max_length=11, unique=True, null=True, blank=True)
     degree = models.CharField(max_length=50, choices=[
         ('Diploma', 'دبلوم'),
         ('Bachelor', 'بكالوريوس'),
@@ -57,7 +57,17 @@ class Student(models.Model):
         ('Regular', 'نظامي'),
         ('Affiliation', 'انتساب'),
     ], blank=True)
+    academic_status = models.CharField(max_length=50, choices=[
+        ('Active', 'على مقاعد الدراسة'),
+        ('Graduating', 'متوقع تخرجه'),
+        ('Graduated', 'متخرج'),
+        ('Suspended', 'موقوف'),
+        ('Dropped', 'منسحب'),
+    ], blank=True)
     enrollment_year = models.IntegerField(null=True, blank=True)
+    # students/models.py inside Student class
+    min_hours = models.IntegerField(default=12)
+    max_hours = models.IntegerField(default=18)
 
     # Contact
     phone_number = models.CharField(max_length=10, blank=True, null=True)
@@ -75,35 +85,61 @@ class Student(models.Model):
 
     @property
     def gpa(self):
-        enrollments = self.enrollments.filter(grade__isnull=False)
+        enrollments = self.enrollments.filter(
+            grade_points__isnull=False
+        ).select_related('section__subject')
+
         if not enrollments.exists():
-            return None
-        total = sum(e.grade * e.section.subject.hours for e in enrollments)
-        hours = sum(e.section.subject.hours for e in enrollments)
-        return round(total / hours, 2) if hours > 0 else None
+            return 0
+
+        total_points = sum(e.grade_points * e.section.subject.hours for e in enrollments)
+        total_hours = sum(e.section.subject.hours for e in enrollments)
+        return round(total_points / total_hours, 2) if total_hours > 0 else None
     
     @property
     def balance(self):
         from django.db.models import Sum
-        from finance.models import Transaction
-        charges = self.transactions.filter(transaction_type='charge').aggregate(
-            total=Sum('amount'))['total'] or 0
-        payments = self.transactions.filter(transaction_type='payment').aggregate(
-            total=Sum('amount'))['total'] or 0
-        return payments - charges
+        from apps.finance.models import Transaction
 
+        pending = self.transactions.filter(
+            transaction_type='charge',
+            is_paid=False,
+            is_service=False
+        ).aggregate(total=Sum('amount'))['total'] or 0
 
-# add this to students/models.py
+        payments = self.transactions.filter(
+            transaction_type='payment',
+            is_service=False
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        refunds = self.transactions.filter(
+            transaction_type='refund',
+            is_service=False
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        return payments + refunds - pending
+
+    @property
+    def passed_hours(self):
+        # F* = 0.5 points, anything above is passing
+        return self.enrollments.filter(
+            grade_points__isnull=False,
+            grade_points__gt=0.5
+        ).aggregate(
+            total=Sum('section__subject__hours')
+        )['total'] or 0
+
 class HourRegistration(models.Model):
     student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name='hour_registrations')
     semester = models.IntegerField(choices=[
-        (1, 'First Semester'),
-        (2, 'Second Semester'),
-        (3, 'Summer Semester'),
+        (1, 'الفصل الاول'),
+        (2, 'الفصل الثاني'),
+        (3, 'الفصل الصيفي'),
     ])
     year = models.IntegerField()
     requested_hours = models.IntegerField()
     is_paid = models.BooleanField(default=False)
+    paid_hours = models.IntegerField(default=0)  # tracks how many hours have been paid for
 
     class Meta:
         unique_together = ('student', 'semester', 'year')
@@ -113,42 +149,50 @@ class HourRegistration(models.Model):
 
 
 class Enrollment(models.Model):
+
+    # Fixed weights for grade calculation
+    MID_WEIGHT = 30
+    PARTICIPATION_WEIGHT = 20
+    FINAL_WEIGHT = 50
+
     student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name='enrollments')
     section = models.ForeignKey(CourseSection, on_delete=models.PROTECT, related_name='enrollments')
-    hour_registration = models.ForeignKey(
-        HourRegistration,
-        on_delete=models.PROTECT,
-        related_name='enrollments',
-        null=True
-    )  # replaces standalone semester and year fields
-    mid_term_grade = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
-    participation_grade = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
-    final_term_grade = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
-    grade = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    hour_registration = models.ForeignKey(HourRegistration, on_delete=models.PROTECT, related_name='enrollments',null=True)  # replaces standalone semester and year fields
+    
+    # raw grades
+    mid_term_grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    participation_grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    final_term_grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    # auto-calculated
+    weighted_total = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+
+    # assigned after curve
+    symbol = models.CharField(max_length=5, blank=True, null=True)
+    grade_points = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)
 
     class Meta:
         unique_together = ('student', 'section')
 
+    def calculate_weighted_total(self):
+        if any(g is None for g in [self.mid_term_grade, self.participation_grade, self.final_term_grade]):
+            return None
+        return (
+            (self.mid_term_grade * self.MID_WEIGHT / 100) +
+            (self.participation_grade * self.PARTICIPATION_WEIGHT / 100) +
+            (self.final_term_grade * self.FINAL_WEIGHT / 100)
+        )
+
+    def save(self, *args, **kwargs):
+        self.weighted_total = self.calculate_weighted_total()
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.student} - {self.section} ({self.hour_registration.get_semester_display()} {self.hour_registration.year})"
+        return f"{self.student} - {self.section}"
+
+class absence(models.Model):
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='absences')
+    count = models.IntegerField(default=0)
     
-    def clean(self):
-        # Rule 1: student must have paid before enrolling
-        if not self.hour_registration.is_paid:
-            raise ValidationError('Cannot enroll before paying for registered hours.')
-
-        # Rule 2: enrolled hours must not exceed paid hours
-        enrolled_hours = Enrollment.objects.filter(
-            student=self.student,
-            hour_registration=self.hour_registration
-        ).exclude(pk=self.pk).aggregate(
-            total=Sum('section__subject__hours')
-        )['total'] or 0
-
-        new_hours = self.section.subject.hours
-
-        if enrolled_hours + new_hours > self.hour_registration.requested_hours:
-            raise ValidationError(
-                f'This would exceed your registered {self.hour_registration.requested_hours} hours. '
-                f'You have used {enrolled_hours} hours and this subject requires {new_hours} hours.'
-            )
+    def __str__(self):
+        return f"Absence for {self.enrollment.student.full_name_ar} on {self.date}"
