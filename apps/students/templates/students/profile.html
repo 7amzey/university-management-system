@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}معلوماتي{% endblock %}
+
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">معلوماتي</h2>
+            </div>
+            <hr>
+            <div class="row row-cols-1 row-cols-lg-2">
+                <div class="col-12 col-lg-6 p-2">
+                    <h4 class="mb-2">المعلومات الشخصية</h4>
+                    <table class="table table-bordered table-striped table-hover text-center">
+                        <tbody>
+                            <tr>
+                                <th scope="row">الاسم بالعربية</th>
+                                <td> {{ student.first_name_ar }} {{ student.father_name_ar }} {{ student.grandfather_name_ar }} {{ student.last_name_ar }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الاسم بالإنجليزية</th>
+                                <td> {{ student.first_name }} {{ student.father_name }} {{ student.grandfather_name }} {{ student.last_name }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الرقم الوطني</th>
+                                <td> {{ student.national_id }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">مكان الولادة بالعربية</th>
+                                <td> {{ student.birth_place }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">مكان الولادة بالانجليزية</th>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">تاريخ الميلاد</th>
+                                <td> {{ student.date_of_birth|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الجنس</th>
+                                <td> {{ student.get_gender_display }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الجنسية</th>
+                                <td> {{ student.nationality }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% comment %} <div class="row px-2">
+                        <div class="d-flex flex-column flex-lg-row p-3 rounded-3 border w-100">
+                            <div class="col-12 col-lg-8">                        
+                                <p><strong>الاسم بالعربية:</strong> {{ student.first_name_ar }} {{ student.father_name_ar }} {{ student.grandfather_name_ar }} {{ student.last_name_ar }}</p>                   
+                                <p><strong>الاسم بالإنجليزية:</strong> {{ student.first_name }} {{ student.father_name }} {{ student.grandfather_name }} {{ student.last_name }}</p>
+                                <p><strong>الرقم الوطني:</strong> {{ student.national_id }}</p>
+                                <p class="mb-lg-0"><strong>مكان الميلاد:</strong> {{ student.birth_place }}</p>
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <p><strong>تاريخ الميلاد:</strong> {{ student.date_of_birth|date:"d/m/Y" }}</p>
+                                <p><strong>الجنس:</strong> {{ student.get_gender_display }}</p>
+                                <p class="mb-0"><strong>الجنسية:</strong> {{ student.nationality }}</p>
+                            </div>
+                        </div>
+                    </div> {% endcomment %}
+                    {% comment %} <div class="d-flex flex-column flex-lg-row p-3 rounded-3 border">
+                        <div class="col-12 col-lg-8">                        
+                            <p><strong>الاسم بالعربية:</strong> {{ student.first_name_ar }} {{ student.father_name_ar }} {{ student.grandfather_name_ar }} {{ student.last_name_ar }}</p>                   
+                            <p><strong>الاسم بالإنجليزية:</strong> {{ student.first_name }} {{ student.father_name }} {{ student.grandfather_name }} {{ student.last_name }}</p>
+                            <p><strong>الرقم الوطني:</strong> {{ student.national_id }}</p>
+                            <p class="mb-lg-0"><strong>مكان الميلاد:</strong> {{ student.birth_place }}</p>
+                        </div>
+                        <div class="col-12 col-lg-4">
+                            <p><strong>تاريخ الميلاد:</strong> {{ student.date_of_birth|date:"d/m/Y" }}</p>
+                            <p><strong>الجنس:</strong> {{ student.get_gender_display }}</p>
+                            <p class="mb-lg-0"><strong>الجنسية:</strong> {{ student.nationality }}</p>
+                        </div>
+                    </div>
+                    {% endcomment %}
+                </div> 
+                <div class="col-12 col-lg-6 p-2">
+                    <h4 class="mb-2">المعلومات الجامعية</h4>
+                    <table class="table table-bordered table-striped table-hover text-center">
+                        <tbody>
+                            <tr>
+                                <th scope="row">الايميل الجامعي</th>
+                                <td dir="ltr"> {{ student.user.email }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الرقم الجامعي</th>
+                                <td> {{ student.student_id }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الحالة الاكاديمية</th>
+                                <td> {{ student.get_academic_status_display }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الكلية</th>
+                                <td> {{ student.college }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">الدرجة</th>
+                                <td> {{ student.get_degree_display }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">التخصص</th>
+                                <td> {{ student.major }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">سنة الالتحاق</th>
+                                <td> {{ student.enrollment_year }}</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">رقم الهاتف</th>
+                                <td> {{ student.phone_number }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% comment %} <div class="p-3 rounded-3 border">
+                        <p><strong>فرع الثانوية:</strong> {{ student.high_school_branch }}</p>
+                        <p><strong>معدل الثانوية:</strong> {{ student.high_school_average }}</p>
+                        <p><strong>بلد الثانوية:</strong> {{ student.high_school_country }}</p>
+                        <p class="mb-lg-0"><strong>لواء الثانوية:</strong> {{ student.high_school_district }}</p>
+                    </div> {% endcomment %}
+                </div>
+            </div>
+            <div class="row p-2">
+                <h4 class="mb-2">معلومات الثانوية</h4>
+                <table class="table table-bordered table-striped table-hover text-center">
+                    <tbody>
+                        <tr>
+                            <th scope="row">فرع الثانوية</th>
+                            <td> {{ student.high_school_branch }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">معدل الثانوية</th>
+                            <td> {{ student.high_school_average }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">بلد الثانوية</th>
+                            <td> {{ student.high_school_country }}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">لواء الثانوية</th>
+                            <td> {{ student.high_school_district }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

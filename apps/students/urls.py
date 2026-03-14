@@ -14,6 +14,7 @@ urlpatterns = [
     path('grades/history/', views.grade_history, name='grade_history'),
     path('catalog/', views.subject_catalog, name='subject_catalog'),
     path('announcements/', views.announcements, name='announcements'),
-
+    path('profile/', views.profile, name='profile'),
+    
     path('courses/drop/<int:enrollment_id>/', views.drop_section, name='drop_section'),
 ]

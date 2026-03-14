@@ -379,6 +379,12 @@ def announcements(request):
 
 
 @student_required
+def profile(request):
+    student = request.user.student_profile
+
+    return render(request, 'students/profile.html', {'student': student})
+
+@student_required
 def drop_section(request, enrollment_id):
     student = request.user.student_profile
     enrollment = get_object_or_404(Enrollment, id=enrollment_id, student=student)
