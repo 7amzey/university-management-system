@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+{% block title %}شعب {{ subject.name }}{% endblock %}
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">شعب {{ subject.name }}</h2>
+            </div>
+            <hr>
+
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="{% url 'apps.students:course_catalog' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-right me-1"></i> رجوع
+                </a>
+                <div>
+                    <h5 class="fw-bold mb-0">{{ subject.name }}</h5>
+                    <small class="text-muted">{{ subject.code }} — {{ subject.hours }} ساعات</small>
+                </div>
+            </div>
+
+            {% if confirmed_enrollment %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle-fill me-1"></i>
+                مسجل مؤكد في شعبة <strong>{{ confirmed_enrollment.section }}</strong>
+            </div>
+            {% elif pending_section_id %}
+            <div class="alert alert-warning">
+                <i class="bi bi-clock me-1"></i>
+                لديك شعبة معلقة — يمكنك تغييرها أو تأكيدها من صفحة التسجيل
+            </div>
+            {% endif %}
+
+            <div class="row g-3">
+                {% for section in sections %}
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm h-100
+                        {% if confirmed_enrollment.section_id == section.id %}border border-success
+                        {% elif pending_section_id == section.id %}border border-warning{% endif %}">
+                        <div class="card-body">
+
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h6 class="fw-bold mb-0">{{ section }}</h6>
+                                {% if section.confirmed_count >= section.capacity %}
+                                    <span class="badge bg-danger">ممتلئة</span>
+                                {% else %}
+                                    <span class="badge bg-success">{{ section.confirmed_count }} / {{ section.capacity }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="text-muted small mb-3">
+                                <div><i class="bi bi-person me-1"></i> {{ section.instructor }}</div>
+                                <div><i class="bi bi-door-open me-1"></i> {{ section.room }}</div>
+                            </div>
+
+                            {% if section.schedules.all %}
+                            <div class="mb-3">
+                                {% for schedule in section.schedules.all %}
+                                <span class="badge bg-secondary me-1">
+                                    {{ schedule.day }} {{ schedule.start_time|time:"H:i" }}–{{ schedule.end_time|time:"H:i" }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            {% if section.confirmed_count < section.capacity %}
+                                <form method="POST">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="section_id" value="{{ section.id }}">
+                                    <input type="hidden" name="action" value="enroll">
+                                    <button type="submit" class="btn w-100
+                                        {% if pending_section_id == section.id %}btn-warning
+                                        {% elif confirmed_enrollment.section_id == section.id %}btn-success
+                                        {% else %}btn-primary{% endif %}">
+                                        {% if pending_section_id == section.id %}
+                                            <i class="bi bi-clock me-1"></i> معلق — تغيير؟
+                                        {% elif confirmed_enrollment.section_id == section.id %}
+                                            <i class="bi bi-check-circle me-1"></i> مؤكد — تغيير؟
+                                        {% else %}
+                                            <i class="bi bi-plus-circle me-1"></i> إضافة
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                {% if pending_section_id == section.id %}
+                                    <form method="POST" class="mt-1">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="section_id" value="{{ section.id }}">
+                                        <input type="hidden" name="action" value="remove_pending">
+                                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                                            <i class="bi bi-trash me-1"></i> إزالة
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                {% if section.id in requested_section_ids %}
+                                    <button class="btn btn-secondary w-100" disabled>
+                                        <i class="bi bi-clock me-1"></i> تم إرسال الطلب
+                                    </button>
+                                {% else %}
+                                    <form method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="section_id" value="{{ section.id }}">
+                                        <input type="hidden" name="action" value="request">
+                                        <button type="submit" class="btn btn-outline-warning w-100">
+                                            <i class="bi bi-bell me-1"></i> طلب فتح الشعبة
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-5 text-center text-muted">
+                        <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                        لا توجد شعب متاحة لهذه المادة هذا الفصل
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+    </div>
+{% endblock %}

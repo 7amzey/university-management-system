@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% block title %}تسجيل المواد{% endblock %}
+{% block content %}
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">تسجيل المواد</h2>
+            </div>
+            <hr>
+            <!-- Hours summary -->
+            <div class="row g-3 mb-4">
+                <div class="{% if period and hour_reg and window %} col-6 col-md-3 {% else %} col-6 {% endif %}">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="fs-3 fw-bold">{{ hour_reg.requested_hours }}</div>
+                        <div class="text-muted small">الساعات المسجلة</div>
+                    </div>
+                </div>
+                <div class="{% if period and hour_reg and window %} col-6 col-md-3 {% else %} col-6 {% endif %}">
+                    <div class="card border-0 shadow-sm text-center p-3">
+                        <div class="fs-3 fw-bold text-success">{{ confirmed_hours }}</div>
+                        <div class="text-muted small">ساعات مثبتة</div>
+                    </div>
+                </div>
+                {% if period and hour_reg and window %}
+                    <div class="col-6 col-md-3">
+                        <div class="card border-0 shadow-sm text-center p-3">
+                            <div class="fs-3 fw-bold text-warning">{{ pending_hours }}</div>
+                            <div class="text-muted small">ساعات غير مثبتة</div>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="card border-0 shadow-sm text-center p-3">
+                            <div class="fs-3 fw-bold text-primary">{{ total_hours }}</div>
+                            <div class="text-muted small">المجموع</div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            {% if period and hour_reg and window %}
+                <!-- Confirmed Subjects -->
+                <div class="card border-0 shadow-sm mb-4" style="overflow-x: auto; width: 100%;">
+                    <div class="card-header fw-bold d-flex justify-content-between">
+                        <span>الجدول الدراسي</span>
+                        <span class="badge bg-success">{{ confirmed_hours }} ساعة</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0 text-center">
+                            <thead>
+                                <tr>
+                                    <th>رقم المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>عدد الساعات المعتمدة</th>
+                                    <th>رقم الشعبة</th>
+                                    <th>الايام</th>
+                                    <th>الوقت</th>
+                                    <th>المحاضر</th>
+                                    <th>القاعات</th>
+                                    <th>الحالة</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in schedule %}
+                                    <tr>
+                                        <td><code>{{ item.subject_code }}</code></td>
+                                        <td>{{ item.subject_name }}</td>
+                                        <td>{{ item.subject_hours }}</td>
+                                        <td>{{ item.section_id }}</td>
+                                        <td>
+                                            {% for s in item.schedules %}
+                                                {{ s.day }}<br>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% for t in item.schedules %}
+                                                {{ t.start_time|time:"H:i" }} - {{ t.end_time|time:"H:i" }}<br>
+                                            {% endfor %} 
+                                        </td>
+                                        <td>{{ item.instructor.first_name_ar }} {{ item.instructor.last_name_ar }}</td>
+                                        <td>{{ item.room }}</td>
+                                        <td>
+                                            {% if item.status == "confirmed" %}
+                                                <span class="badge bg-success">مثبتة</span>
+                                            {% elif item.status == "pending" %}
+                                                <span class="badge bg-warning">غير مثبتة</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.status == "confirmed" %}
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="drop_confirmed">
+                                                    <input type="hidden" name="enrollment_id" value="{{ item.enrollment_id }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <form method="POST" action="{% url 'apps.students:subject_sections' item.subject_id %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="remove_pending">
+                                                    <input type="hidden" name="section_id" value="{{ item.section_id }}">
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="9" class="text-muted py-3">لا توجد مواد مثبتة</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            الحد الأدنى <strong>{{ student.min_hours }}</strong> ساعة —
+                            الحد الأقصى <strong>{{ hour_reg.requested_hours }}</strong> ساعة
+                        </small>
+                        <form method="POST" action="{% url 'apps.students:submit_enrollment' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i> تأكيد التسجيل
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Eligible subjects -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header fw-bold">المواد المتاحة للتسجيل</div>
+                    <div class="table-responsive">
+                        <table class="table mb-0 text-center">
+                            <thead>
+                                <tr>
+                                    <th class="text-end">المادة</th>
+                                    <th>الرمز</th>
+                                    <th>الساعات</th>
+                                    <th>النوع</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for subject in eligible_subjects %}
+                                <tr>
+                                    <td class="text-end fw-semibold">{{ subject.name }}</td>
+                                    <td><code>{{ subject.code }}</code></td>
+                                    <td>{{ subject.hours }}</td>
+                                    <td>{{ subject.get_subject_type_display }}</td>
+                                    <td>
+                                        <a href="{% url 'apps.students:subject_sections' subject.id %}" class="btn btn-sm btn-outline-primary">
+                                            عرض الشعب <i class="bi bi-arrow-left ms-1"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-muted py-3">لا توجد مواد متاحة</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info text-center">
+                    <strong>مواعيد التسجيل:</strong><br>
+                    {% for w in student_windows %}
+                       {{ w.start_datetime|date:"Y-m-d" }} من الساعة {{ w.start_datetime|date:"H:i" }} إلى الساعة {{ w.end_datetime|date:"H:i" }}<br>
+                    {% endfor %}
+                </div>
+                {% if not period %}
+                    <div class="alert alert-danger text-center">
+                        <i class="bi bi-lock me-1"></i> التسجيل مغلق حالياً.
+                    </div>
+                {% elif not hour_reg %}
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-clock me-1"></i>
+                        يرجى دفع رسوم الفصل الدراسي لتمكين التسجيل.
+                    </div>
+                {% endif %}
+
+                <!-- Confirmed Subjects -->
+                <div class="card border-0 shadow-sm mb-4" style="overflow: visible; width: 100%;">
+                    <div class="card-header fw-bold d-flex justify-content-between">
+                        <span>الجدول الدراسي</span>
+                        <span class="badge bg-success">{{ confirmed_hours }} ساعة</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table mb-0 text-center" style="min-width: 900px;">
+                            <thead>
+                                <tr>
+                                    <th>رقم المادة</th>
+                                    <th>اسم المادة</th>
+                                    <th>عدد الساعات المعتمدة</th>
+                                    <th>رقم الشعبة</th>
+                                    <th>الايام</th>
+                                    <th>الوقت</th>
+                                    <th>المحاضر</th>
+                                    <th>القاعات</th>
+                                    <th>الحالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in schedule %}
+                                    <tr>
+                                        <td><code>{{ item.subject_code }}</code></td>
+                                        <td>{{ item.subject_name }}</td>
+                                        <td>{{ item.subject_hours }}</td>
+                                        <td>{{ item.section_id }}</td>
+                                        <td>
+                                            {% for s in item.schedules %}
+                                                {{ s.day }}<br>
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% for t in item.schedules %}
+                                                {{ t.start_time|time:"H:i" }} - {{ t.end_time|time:"H:i" }}<br>
+                                            {% endfor %} 
+                                        </td>
+                                        <td>{{ item.instructor.first_name_ar }} {{ item.instructor.last_name_ar }}</td>
+                                        <td>{{ item.room }}</td>
+                                        <td>
+                                            {% if item.status == "confirmed" %}
+                                                <span class="badge bg-success">مثبتة</span>
+                                            {% elif item.status == "pending" %}
+                                                <span class="badge bg-warning">غير مثبتة</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="9" class="text-muted py-3">لا توجد مواد مثبتة</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            الساعات المسجلة — <strong>{{ confirmed_hours }}</strong>
+                        </small>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

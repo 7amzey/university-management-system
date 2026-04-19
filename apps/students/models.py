@@ -133,6 +133,14 @@ class Student(models.Model):
             total=Sum('section__subject__hours')
         )['total'] or 0
 
+    @property
+    def failed_hours(self):
+        return self.enrollments.filter(
+            grade_points=0.5  # F* only
+        ).aggregate(
+            total=Sum('section__subject__hours')
+        )['total'] or 0
+
 class HourRegistration(models.Model):
     student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name='hour_registrations')
     semester = models.IntegerField(choices=[
@@ -182,9 +190,9 @@ class Enrollment(models.Model):
         if any(g is None for g in [self.mid_term_grade, self.participation_grade, self.final_term_grade]):
             return None
         return (
-            (self.mid_term_grade * self.MID_WEIGHT / 100) +
-            (self.participation_grade * self.PARTICIPATION_WEIGHT / 100) +
-            (self.final_term_grade * self.FINAL_WEIGHT / 100)
+            (self.mid_term_grade) +
+            (self.participation_grade) +
+            (self.final_term_grade)
         )
 
     def save(self, *args, **kwargs):

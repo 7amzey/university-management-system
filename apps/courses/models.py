@@ -23,48 +23,41 @@ class Subject(models.Model):
         return f"({self.code}) {self.name}"
     
     def assign_symbols(self, semester, year):
-        from students.models import Enrollment
+        from apps.students.models import Enrollment
 
-        enrollments = list(
-            Enrollment.objects.filter(
-                section__subject=self,
-                section__semester=semester,
-                section__year=year,
-                weighted_total__isnull=False
-            ).order_by('-weighted_total')
+        enrollments = Enrollment.objects.filter(
+            section__subject=self,
+            section__semester=semester,
+            section__year=year,
+            weighted_total__isnull=False
         )
 
-        total_students = len(enrollments)
-        if total_students == 0:
+        if not enrollments.exists():
             return
 
         distributions = GradeDistribution.objects.filter(
             subject=self,
             semester=semester,
             year=year
-        ).order_by('-percentage')
+        )
 
         if not distributions.exists():
             return
 
-        current_index = 0
-        for dist in distributions:
-            count = round(total_students * float(dist.percentage) / 100)
-            points = GradeDistribution.SYMBOL_POINTS.get(dist.symbol, 0)
+        for enrollment in enrollments:
+            match = distributions.filter(
+                min_grade__lte=enrollment.weighted_total,
+                max_grade__gte=enrollment.weighted_total
+            ).first()
 
-            for enrollment in enrollments[current_index:current_index + count]:
-                enrollment.symbol = dist.symbol
-                enrollment.grade_points = points
-                enrollment.save()
+            if match:
+                enrollment.symbol = match.symbol
+                enrollment.grade_points = GradeDistribution.SYMBOL_POINTS.get(match.symbol, 0)
+            else:
+                # weighted_total doesn't fall in any range — assign F*
+                enrollment.symbol = 'F*'
+                enrollment.grade_points = 0.50
 
-            current_index += count
-
-        # assign any remaining students the last symbol
-        last_dist = distributions.last()
-        last_points = GradeDistribution.SYMBOL_POINTS.get(last_dist.symbol, 0)
-        for enrollment in enrollments[current_index:]:
-            enrollment.symbol = last_dist.symbol
-            enrollment.grade_points = last_points
             enrollment.save()
 
 
@@ -75,6 +68,7 @@ class CourseSection(models.Model):
         (3, 'الفصل الصيفي'),
     ]
 
+    section_id = models.IntegerField()
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name='sections')
     instructor = models.ForeignKey(Instructor, on_delete=models.PROTECT, related_name='sections')
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='sections')
@@ -115,7 +109,7 @@ class SectionSchedule(models.Model):
         ordering = ['day', 'start_time']
 
     def __str__(self):
-        return f"{self.get_day_display()} {self.start_time} - {self.end_time}"
+        return f"{self.day} {self.start_time} - {self.end_time}"
     
 class ExamSchedule(models.Model):
     section = models.ForeignKey(
@@ -169,11 +163,93 @@ class GradeDistribution(models.Model):
     ])
     year = models.IntegerField()
     symbol = models.CharField(max_length=5, choices=SYMBOL_CHOICES)
-    percentage = models.DecimalField(max_digits=5, decimal_places=2)
+    min_grade = models.DecimalField(max_digits=5, decimal_places=2)  # e.g. 87.00
+    max_grade = models.DecimalField(max_digits=5, decimal_places=2)  # e.g. 100.00
 
     class Meta:
         unique_together = ('subject', 'semester', 'year', 'symbol')
-        ordering = ['-percentage']
+        ordering = ['-min_grade']
 
     def __str__(self):
-        return f"{self.subject} {self.get_semester_display()} {self.year} — {self.symbol} ({self.percentage}%)"
+        return f"{self.subject} {self.get_semester_display()} {self.year} — {self.symbol} ({self.min_grade}-{self.max_grade})"
+class RegistrationPeriod(models.Model):
+    semester = models.IntegerField(choices=[
+        (1, 'First Semester'),
+        (2, 'Second Semester'),
+        (3, 'Summer Semester'),
+    ])
+    year = models.IntegerField()
+    overall_start = models.DateField()
+    overall_end = models.DateField()
+    is_open = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('semester', 'year')
+
+    def __str__(self):
+        return f"{self.get_semester_display()} {self.year}"
+
+    def get_window_for_student(self, student):
+        """Returns the active window for a student based on their completed hours."""
+        from django.utils import timezone
+        now = timezone.now()
+        completed = student.passed_hours + student.failed_hours
+
+        return self.windows.filter(
+            min_hours__lte=completed,
+            max_hours__gte=completed,
+            start_datetime__lte=now,
+            end_datetime__gte=now
+        ).first()
+
+
+class RegistrationWindow(models.Model):
+    period = models.ForeignKey(
+        RegistrationPeriod,
+        on_delete=models.CASCADE,
+        related_name='windows'
+    )
+    min_hours = models.IntegerField()
+    max_hours = models.IntegerField()
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+
+    class Meta:
+        ordering = ['min_hours', 'start_datetime']
+
+    def __str__(self):
+        return f"{self.period} — {self.min_hours} to {self.max_hours} hrs (starts {self.start_datetime}, ends {self.end_datetime})"
+
+
+class SectionRequest(models.Model):
+    STATUS = [
+        ('pending', 'قيد الانتظار'),
+        ('approved', 'مقبول'),
+        ('rejected', 'مرفوض'),
+    ]
+
+    student = models.ForeignKey(
+        'students.Student',
+        on_delete=models.CASCADE,
+        related_name='section_requests'
+    )
+    section = models.ForeignKey(
+        CourseSection,
+        on_delete=models.CASCADE,
+        related_name='requests'
+    )
+    status = models.CharField(max_length=10, choices=STATUS, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    note = models.TextField(blank=True)
+    handled_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='handled_requests'
+    )
+
+    class Meta:
+        unique_together = ('student', 'section')
+
+    def __str__(self):
+        return f"{self.student} — {self.section} ({self.get_status_display()})"
