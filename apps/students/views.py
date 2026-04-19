@@ -7,7 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from apps.students.models import Student, HourRegistration, Enrollment, absence
-from apps.courses.models import Subject, CourseSection, ExamSchedule, RegistrationPeriod, SectionRequest
+from apps.courses.models import SectionSchedule, Subject, CourseSection, ExamSchedule, RegistrationPeriod, SectionRequest
 from django.db.models import Count, Sum, F
 from django.db import models as db_models
 from apps.courses.constants import SUBJECT_TYPES
@@ -57,6 +57,10 @@ def student_required(view_func):
 def dashboard(request):
     student = request.user.student_profile
 
+    DAY_MAP = {6: 'ح', 0: 'ن', 1: 'ث', 2: 'ر', 3: 'خ', 4: 'ج', 5: 'س'}
+    today_day = DAY_MAP.get(timezone.now().weekday())
+    today_schedules = []
+
     latest_reg = student.hour_registrations.order_by('-year', '-semester').first()
     current_enrollments = []
     midterm_exams = []
@@ -70,6 +74,15 @@ def dashboard(request):
             'section__instructor',
             'section__room'
         )
+
+        today_schedules = SectionSchedule.objects.filter(
+            section__in=[e.section for e in current_enrollments],
+            day=today_day
+        ).select_related(
+            'section__subject',
+            'section__instructor',
+            'section__room'
+        ).order_by('start_time')
 
         midterm_exams = ExamSchedule.objects.filter(
             section__in=[e.section for e in current_enrollments],
@@ -90,6 +103,7 @@ def dashboard(request):
         'midterm_exams': midterm_exams,
         'final_exams': final_exams,
         'absences': absences,
+        'today_schedules': today_schedules,
     }
     return render(request, 'students/dashboard.html', context)
 
