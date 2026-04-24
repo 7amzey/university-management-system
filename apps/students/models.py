@@ -161,6 +161,11 @@ class HourRegistration(models.Model):
 
 
 class Enrollment(models.Model):
+    
+    STATUS = [
+        ('active', 'مسجل'),
+        ('dropped', 'منسحب'),
+    ]
 
     # Fixed weights for grade calculation
     MID_WEIGHT = 30
@@ -170,7 +175,8 @@ class Enrollment(models.Model):
     student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name='enrollments')
     section = models.ForeignKey(CourseSection, on_delete=models.PROTECT, related_name='enrollments')
     hour_registration = models.ForeignKey(HourRegistration, on_delete=models.PROTECT, related_name='enrollments',null=True)  # replaces standalone semester and year fields
-    
+    status = models.CharField(max_length=10, choices=STATUS, default='active')
+
     # raw grades
     mid_term_grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     participation_grade = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
@@ -187,6 +193,8 @@ class Enrollment(models.Model):
         unique_together = ('student', 'section')
 
     def calculate_weighted_total(self):
+        if self.status == 'dropped':
+            return None
         if any(g is None for g in [self.mid_term_grade, self.participation_grade, self.final_term_grade]):
             return None
         return (
@@ -196,11 +204,19 @@ class Enrollment(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        self.weighted_total = self.calculate_weighted_total()
+        if self.status == 'dropped':
+            self.mid_term_grade = None
+            self.participation_grade = None
+            self.final_term_grade = None
+            self.weighted_total = None
+            self.symbol = None
+            self.grade_points = None
+        else:
+            self.weighted_total = self.calculate_weighted_total()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.student} - {self.section}"
+        return f"{self.student} - {self.section} ({self.get_status_display()})"
 
 class absence(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='absences')

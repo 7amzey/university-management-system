@@ -33,11 +33,17 @@ class HourRegistrationAdmin(admin.ModelAdmin):
 
 @admin.register(Enrollment)
 class EnrollmentAdmin(admin.ModelAdmin):
-    list_display = ('student', 'section', 'mid_term_grade', 'participation_grade', 'final_term_grade', 'weighted_total', 'symbol', 'grade_points')
-    list_filter = ('section__semester', 'section__year', 'section__subject__department')
+    list_display = ('student', 'section', 'status', 'mid_term_grade', 'participation_grade', 'final_term_grade', 'weighted_total', 'symbol', 'grade_points')
+    list_filter = ('status', 'section__semester', 'section__year', 'section__subject__department')
     search_fields = ('student__first_name', 'student__last_name', 'student__student_id')
     readonly_fields = ('weighted_total', 'symbol', 'grade_points')
     
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.status == 'dropped':
+            # make all grade fields readonly for dropped enrollments
+            return self.readonly_fields + ('mid_term_grade', 'participation_grade', 'final_term_grade', 'status')
+        return self.readonly_fields
+
 @admin.register(absence)
 class AbsenceAdmin(admin.ModelAdmin):
     list_display = ('enrollment', 'count')

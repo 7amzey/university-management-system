@@ -29,7 +29,8 @@ class Subject(models.Model):
             section__subject=self,
             section__semester=semester,
             section__year=year,
-            weighted_total__isnull=False
+            weighted_total__isnull=False,
+            status='active'
         )
 
         if not enrollments.exists():

@@ -14,6 +14,12 @@ from apps.courses.constants import SUBJECT_TYPES
 from django.utils import timezone
 from apps.announcements.models import Announcement
 
+from django.http import HttpResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from .pdf_utils import ar, ar_style
+
 
 
 def student_login(request):
@@ -806,6 +812,10 @@ def drop_section(request, enrollment_id):
     messages.success(request, f'تم حذف {name} من جدولك.')
     return redirect('apps.students:course_catalog')
 
+@student_required
+def services(request):
+    return render(request, 'students/services.html')
+
 # ---------------------------------------------------------------------------
 
 def get_current_semester():
@@ -817,3 +827,194 @@ def get_current_semester():
         return 2  # Second semester
     else:
         return 3  # Summer
+
+@student_required
+def drop_by_code(request):
+    if request.method != 'POST':
+        return redirect('apps.students:services')
+
+    student = request.user.student_profile
+    current_year = timezone.now().year
+    current_semester = get_current_semester()
+    code = request.POST.get('subject_code', '').strip()
+
+    enrollment = Enrollment.objects.filter(
+        student=student,
+        section__subject__code__iexact=code,
+        section__semester=current_semester,
+        section__year=current_year,
+        status='active'  # can't drop already dropped
+    ).first()
+
+    if not enrollment:
+        messages.error(request, f'لا يوجد تسجيل فعال لمادة برمز {code} في هذا الفصل.')
+    else:
+        enrollment.status = 'dropped'
+        enrollment.save()
+        messages.success(request, f'تم اسقاط مادة {enrollment.section.subject.name} بنجاح.')
+
+    return redirect('apps.students:services')
+
+@student_required
+def pdf_study_plan(request):
+    student = request.user.student_profile
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="study_plan_{student.student_id}.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    story = []
+
+    # header
+    story.append(Paragraph(ar('جامعة البلقاء التطبيقية'), ar_style(size=16)))
+    story.append(Paragraph(ar(f'الخطة المفرغة للطالب: {student.full_name_ar}'), ar_style(size=13)))
+    story.append(Paragraph(ar(f'الرقم الجامعي: {student.student_id}'), ar_style()))
+    story.append(Paragraph(ar(f'التخصص: {student.major}'), ar_style()))
+    story.append(Paragraph(ar(f'الكلية: {student.college}'), ar_style()))
+    story.append(Spacer(1, 20))
+
+    # group subjects by type
+    from apps.courses.constants import SUBJECT_TYPES
+    from apps.courses.models import Subject
+
+    subjects = Subject.objects.filter(
+        majors=student.major
+    ).prefetch_related('prerequisites').order_by('subject_type', 'code')
+
+    passed_ids = set(
+        student.enrollments.filter(
+            grade_points__isnull=False,
+            grade_points__gt=0.5
+        ).values_list('section__subject_id', flat=True)
+    )
+
+    passed_enrollments = {
+        e.section.subject_id: e.symbol
+        for e in student.enrollments.filter(grade_points__isnull=False)
+        .select_related('section__subject')
+    }
+
+    for type_key, type_label in SUBJECT_TYPES:
+        type_subjects = [s for s in subjects if s.subject_type == type_key]
+        if not type_subjects:
+            continue
+
+        story.append(Paragraph(ar(type_label), ar_style(size=13)))
+        story.append(Spacer(1, 6))
+
+        # table header — reversed for RTL
+        data = [[ar('الحالة'), ar('العلامة'), ar('الساعات'), ar('اسم المادة'), ar('الرمز')]]
+
+        for subject in type_subjects:
+            symbol = passed_enrollments.get(subject.id, '')
+            if subject.id in passed_ids:
+                status = ar('مكتملة')
+            else:
+                status = ar('لم تدرس')
+
+            data.append([
+                ar(status),
+                ar(symbol),
+                ar(str(subject.hours)),
+                ar(subject.name),
+                ar(subject.code),
+            ])
+
+        table = Table(data, colWidths=[70, 60, 60, 200, 80])
+        table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, -1), 'Amiri'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#119F61')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ]))
+
+        story.append(table)
+        story.append(Spacer(1, 16))
+
+    doc.build(story)
+    return response
+
+
+@student_required
+def pdf_schedule(request):
+    student = request.user.student_profile
+    current_year = timezone.now().year
+    current_semester = get_current_semester()
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="schedule_{student.student_id}.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    story = []
+
+    # header
+    story.append(Paragraph(ar('جامعة البلقاء التطبيقية'), ar_style(size=16)))
+    story.append(Paragraph(ar(f'جدول الطالب: {student.full_name_ar}'), ar_style(size=13)))
+    story.append(Paragraph(ar(f'الرقم الجامعي: {student.student_id}'), ar_style()))
+    story.append(Paragraph(ar(f'الفصل الدراسي: {current_semester} / {current_year}'), ar_style()))
+    story.append(Spacer(1, 20))
+
+    hour_reg = student.hour_registrations.filter(
+        semester=current_semester,
+        year=current_year
+    ).first()
+
+    if not hour_reg:
+        story.append(Paragraph(ar('لا يوجد تسجيل لهذا الفصل'), ar_style()))
+        doc.build(story)
+        return response
+
+    enrollments = hour_reg.enrollments.select_related(
+        'section__subject',
+        'section__instructor',
+        'section__room'
+    ).prefetch_related('section__schedules')
+
+    # table header
+    data = [[
+        ar('الأيام'),
+        ar('الوقت'),
+        ar('القاعة'),
+        ar('المحاضر'),
+        ar('الساعات'),
+        ar('اسم المادة'),
+        ar('الرمز'),
+    ]]
+
+    for enrollment in enrollments:
+        section = enrollment.section
+        schedules = section.schedules.all()
+        days = ' / '.join(s.get_day_display() for s in schedules)
+        times = ' / '.join(f'{s.start_time.strftime("%H:%M")}-{s.end_time.strftime("%H:%M")}' for s in schedules)
+        instructor = f'{section.instructor.first_name_ar} {section.instructor.last_name_ar}'
+
+        data.append([
+            ar(days),
+            ar(times),
+            ar(str(section.room)),
+            ar(instructor),
+            ar(str(section.subject.hours)),
+            ar(section.subject.name),
+            ar(section.subject.code),
+        ])
+
+    table = Table(data, colWidths=[60, 80, 50, 90, 45, 120, 60])
+    table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (-1, -1), 'Amiri'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#119F61')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+
+    story.append(table)
+    doc.build(story)
+    return response

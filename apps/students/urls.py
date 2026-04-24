@@ -19,4 +19,9 @@ urlpatterns = [
     path('courses/submit/', views.submit_enrollment, name='submit_enrollment'),
     path('courses/<int:subject_id>/sections/', views.subject_sections, name='subject_sections'),
     path('courses/drop/<int:enrollment_id>/', views.drop_section, name='drop_section'),
+
+    path('services/', views.services, name='services'),
+    path('services/drop-by-code/', views.drop_by_code, name='drop_by_code'),
+    path('services/pdf/study-plan/', views.pdf_study_plan, name='pdf_study_plan'),
+    path('services/pdf/schedule/', views.pdf_schedule, name='pdf_schedule'),
 ]
