@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}تذاكر الدعم{% endblock %}
+{% block content %}
+    <!-- Sidebar -->
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">تذاكر الدعم</h2>
+            </div>
+            <hr>
+            <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table mb-0 text-center" style="min-width: 500px;">
+                        <thead>
+                            <tr>
+                                <th class="text-end">الموضوع</th>
+                                <th>التصنيف</th>
+                                <th>الحالة</th>
+                                <th>آخر تحديث</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets %}
+                            <tr>
+                                <td class="text-end fw-semibold">{{ ticket.subject }}</td>
+                                <td>{{ ticket.get_category_display }}</td>
+                                <td>
+                                    <span class="badge
+                                        {% if ticket.status == 'open' %}bg-success
+                                        {% elif ticket.status == 'in_progress' %}bg-warning text-dark
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">{{ ticket.updated_at|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'apps.students:ticket_detail' ticket.id %}"
+                                    class="btn btn-sm btn-outline-primary">
+                                        عرض
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-muted py-4">لا توجد تذاكر دعم</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

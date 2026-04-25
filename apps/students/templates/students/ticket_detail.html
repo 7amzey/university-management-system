@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}{{ ticket.subject }}{% endblock %}
+{% block content %}
+    <!-- Sidebar -->
+    {% include 'students/includes/sidebar.html' %}
+    <div id="main-content">
+        <div class="container-fluid p-3 p-md-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <!-- Mobile: opens offcanvas -->
+                <button class="btn btn-outline-dark d-md-none"
+                        data-bs-toggle="offcanvas"
+                        data-bs-target="#mobileSidebar"
+                        id="mobileSidebarToggle">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+
+                <h2 class="mb-0 fw-bold me-md-0 me-2">{{ ticket.subject }}</h2>
+            </div>
+            <hr>
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div>
+                    <h5 class="fw-bold mb-0">{{ ticket.subject }}</h5>
+                    <small class="text-muted">
+                        {{ ticket.get_category_display }} —
+                        <span class="badge
+                            {% if ticket.status == 'open' %}bg-success
+                            {% elif ticket.status == 'in_progress' %}bg-warning text-dark
+                            {% else %}bg-secondary{% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </small>
+                </div>
+            </div>
+
+            <!-- conversation thread -->
+            <div class="d-flex flex-column gap-3 mb-4">
+                {% for message in messages_list %}
+                <div class="d-flex {% if message.sender == request.user %}justify-content-start{% else %}justify-content-end{% endif %}">
+                    <div class="card border-0 shadow-sm"
+                        style="max-width: 75%;
+                        {% if message.sender == request.user %}background-color: var(--bs-secondary-bg){% else %}background-color: rgba(17,159,97,0.15){% endif %}">
+                        <div class="card-body py-2 px-3">
+                            <div class="fw-semibold small mb-1">
+                                {% if message.sender == request.user %}
+                                    أنت
+                                {% else %}
+                                    الدعم الفني
+                                {% endif %}
+                            </div>
+                            <div>{{ message.body }}</div>
+                            <div class="text-muted mt-1" style="font-size:.75rem;">
+                                {{ message.sent_at|date:"d/m/Y H:i" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- reply form -->
+            {% if ticket.status != 'closed' %}
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <textarea name="body" class="form-control" rows="3"
+                                        placeholder="اكتب ردك هنا..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-1"></i> إرسال
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-secondary text-center">
+                    <i class="bi bi-lock me-1"></i> هذه التذكرة مغلقة
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+{% endblock %}

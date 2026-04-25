@@ -24,4 +24,8 @@ urlpatterns = [
     path('services/drop-by-code/', views.drop_by_code, name='drop_by_code'),
     path('services/pdf/study-plan/', views.pdf_study_plan, name='pdf_study_plan'),
     path('services/pdf/schedule/', views.pdf_schedule, name='pdf_schedule'),
+
+    path('tickets/', views.tickets_list, name='tickets_list'),
+    path('tickets/<int:ticket_id>/', views.ticket_detail, name='ticket_detail'),
+    path('ticket/submit/', views.submit_ticket, name='submit_ticket'),
 ]

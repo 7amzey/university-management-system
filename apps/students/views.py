@@ -13,6 +13,7 @@ from django.db import models as db_models
 from apps.courses.constants import SUBJECT_TYPES
 from django.utils import timezone
 from apps.announcements.models import Announcement
+from apps.tickets.models import Ticket, TicketMessage
 
 from django.http import HttpResponse
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
@@ -815,6 +816,74 @@ def drop_section(request, enrollment_id):
 @student_required
 def services(request):
     return render(request, 'students/services.html')
+
+@student_required
+def submit_ticket(request):
+    if request.method != 'POST':
+        return redirect('apps.students:dashboard')
+
+    student = request.user.student_profile
+    category = request.POST.get('category')
+    subject = request.POST.get('subject', '').strip()
+    body = request.POST.get('body', '').strip()
+
+    if not subject or not body or not category:
+        return HttpResponse(status=400)
+
+    ticket = Ticket.objects.create(
+        student=student,
+        category=category,
+        subject=subject,
+    )
+    TicketMessage.objects.create(
+        ticket=ticket,
+        sender=request.user,
+        body=body
+    )
+    return HttpResponse(status=200)
+
+
+@student_required
+def tickets_list(request):
+    student = request.user.student_profile
+    tickets = student.tickets.all()
+    context = {
+        'tickets': tickets,
+    }
+    return render(request, 'students/tickets_list.html', context)
+
+
+@student_required
+def ticket_detail(request, ticket_id):
+    student = request.user.student_profile
+    ticket = get_object_or_404(Ticket, id=ticket_id, student=student)
+    messages_list = ticket.messages.select_related('sender')
+
+    if request.method == 'POST':
+        if ticket.status == 'closed':
+            messages.error(request, 'هذه التذكرة مغلقة ولا يمكن الرد عليها.')
+            return redirect('apps.students:ticket_detail', ticket_id=ticket_id)
+
+        body = request.POST.get('body', '').strip()
+        if body:
+            TicketMessage.objects.create(
+                ticket=ticket,
+                sender=request.user,
+                body=body
+            )
+            # reopen ticket if it was in_progress
+            if ticket.status != 'open':
+                ticket.status = 'open'
+                ticket.save()
+
+        return redirect('apps.students:ticket_detail', ticket_id=ticket_id)
+
+    context = {
+        'ticket': ticket,
+        'messages_list': messages_list,
+    }
+    return render(request, 'students/ticket_detail.html', context)
+
 
 # ---------------------------------------------------------------------------
 

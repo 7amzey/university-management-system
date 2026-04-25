@@ -50,10 +50,31 @@
     </span>
     <span class="link-label">الاعلانات</span>
 </a>
-<a href="{% url 'apps.students:services' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
-    <i class="bi bi-box flex-shrink-0 fs-5"></i>
-    <span class="link-label">خدمات التسجيل</span>
-</a>
+<div>
+    <button
+        class="nav-link text-white d-flex gap-2 rounded px-3 py-2 w-100 border-0 bg-transparent"
+        data-bs-toggle="collapse"
+        data-bs-target="#services"
+        aria-expanded="false"
+        aria-controls="submenuCourses">
+        <i class="bi bi-grid flex-shrink-0 fs-5"></i>
+        <span class="link-label flex-grow-1 text-end me-2 my-auto">الخدمات</span>
+        <i class="bi bi-chevron-down link-label ms-auto my-auto" style="font-size:.75rem; transition: transform .25s;" id="submenuCoursesIcon"></i>
+    </button>
+
+    <div class="collapse" id="services">
+        <div class="d-flex flex-column ps-3 mt-1 gap-1">
+            <a href="{% url 'apps.students:services' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2">
+                <i class="bi bi-box flex-shrink-0" style="font-size:1rem"></i>
+                <span class="link-label">خدمات التسجيل</span>
+            </a>
+            <a href="{% url 'apps.students:tickets_list' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2">
+                <i class="bi bi-headset flex-shrink-0" style="font-size:1rem"></i>
+                <span class="link-label">تذاكر الدعم</span>
+            </a>
+        </div>
+    </div>
+</div>
 <a href="{% url 'apps.students:profile' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
     <i class="bi bi-person-circle flex-shrink-0 fs-5"></i>
     <span class="link-label">معلوماتي</span>
