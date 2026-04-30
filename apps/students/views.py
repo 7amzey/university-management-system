@@ -38,7 +38,7 @@ def student_login(request):
             request.session['is_student_portal'] = True
             return redirect('apps.students:dashboard')
         else:
-            messages.error(request, 'Invalid student ID or password.')
+            messages.error(request, 'رقم الطالب أو كلمة السر غير صحيحة.')
 
     return render(request, 'students/login.html')
 

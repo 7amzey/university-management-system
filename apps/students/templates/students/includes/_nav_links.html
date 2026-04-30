@@ -3,11 +3,11 @@
     <span class="link-label">الصفحة الرئيسية</span>
 </a>
 <a href="{% url 'apps.students:finance' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
-    <i class="bi bi-wallet2 flex-shrink-0 fs-5"></i>
+    <i class="bi bi-credit-card-fill flex-shrink-0 fs-5"></i>
     <span class="link-label">المالية</span>
 </a>
 <a href="{% url 'apps.students:course_catalog' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
-    <i class="bi bi-pencil-square flex-shrink-0 fs-5"></i>
+    <i class="bi bi-pencil-fill flex-shrink-0 fs-5"></i>
     <span class="link-label">التسجيل</span>
 </a>
 <div>
@@ -17,7 +17,7 @@
         data-bs-target="#submenuCourses"
         aria-expanded="false"
         aria-controls="submenuCourses">
-        <i class="bi bi-bar-chart-fill flex-shrink-0 fs-5"></i>
+        <i class="bi bi-bar-chart flex-shrink-0 fs-5"></i>
         <span class="link-label flex-grow-1 text-end me-2 my-auto">العلامات</span>
         <i class="bi bi-chevron-down link-label ms-auto my-auto" style="font-size:.75rem; transition: transform .25s;" id="submenuCoursesIcon"></i>
     </button>
@@ -25,11 +25,11 @@
     <div class="collapse" id="submenuCourses">
         <div class="d-flex flex-column ps-3 mt-1 gap-1">
             <a href="{% url 'apps.students:current_grades' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2">
-                <i class="bi bi-circle flex-shrink-0" style="font-size:.5rem"></i>
+                <i class="bi bi-journal-text flex-shrink-0" style="font-size:1rem"></i>
                 <span class="link-label">علامات الفصل</span>
             </a>
             <a href="{% url 'apps.students:grade_history' %}" class="nav-link text-white d-flex align-items-center gap-2 rounded px-3 py-2">
-                <i class="bi bi-circle flex-shrink-0" style="font-size:.5rem"></i>
+                <i class="bi bi-clock-history flex-shrink-0" style="font-size:1rem"></i>
                 <span class="link-label">كشف العلامات</span>
             </a>
         </div>
@@ -41,7 +41,7 @@
 </a>
 <a href="{% url 'apps.students:announcements' %}" class="nav-link d-flex align-items-center gap-3 px-3 py-2 rounded-2 text-white mb-1">
     <span class="position-relative flex-shrink-0">
-        <i class="bi bi-bell fs-5"></i>
+        <i class="bi bi-megaphone-fill fs-5"></i>
         {% if unseen_announcements > 0 %}
             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.6rem;">
                 {{ unseen_announcements }}

@@ -4,75 +4,74 @@
 {% block title %}دخول الى البوابة الالكترونية{% endblock %}
 
 {% block content %}
-    <div class="container-fluid">
-        <div class="p-0 min-vh-100 d-flex align-items-center justify-content-center" dir="rtl">
-            <div class="row row-lg-cols-2 w-100 justify-content-center gy-4 gy-lg-0 gx-4 my-auto">
+<div class="min-vh-100 d-flex flex-column align-items-center justify-content-center mx-3" dir="rtl">
 
+    <div class="card shadow border-0 overflow-hidden" style="width: 100%; max-width: 420px;">
 
-                <!-- RIGHT CARD -->
-                <div class="col-12 col-lg-4 mt-0">
-                    <div class="card shadow-sm">
-                        <div class="card-body text-center">
-
-                            <img src="{% static 'images/logo.png' %}" alt="University Logo" class="d-block mx-auto mb-3 mt-1" style="height: 80px;">
-
-                            <h5 class="fw-bold mb-3">دخول الطلاب</h5>
-
-                            <form method="post">
-                            {% csrf_token %}
-                            <div class="form-floating mb-3">
-                                <input type="text" class="form-control" id="floatingInput" placeholder="رقم الطالب" name="student_id">
-                                <label for="floatingInput" class="text-end w-100" style="transform-origin: right top">رقم الطالب</label>
-                            </div>
-
-                            <div class="form-floating mb-3">
-                                <input type="password" class="form-control" id="floatingPassword" placeholder="كلمة السر" name="password">
-                                <label for="floatingPassword" class="text-end w-100" style="transform-origin: right top">كلمة السر</label>
-                            </div>
-
-                            <button class="btn btn-portal w-100">
-                                دخول
-                            </button>
-                            <a href="#" class="d-block mt-3 link-offset-2">
-                                نسيت كلمة السر؟
-                            </a>
-                            </form>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- LEFT CARD -->
-                <div class="col-12 col-lg-8">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body text-center d-flex flex-column justify-content-center">
-
-                            <h4 class="fw-bold mb-2 mt-lg-auto mt-3">نظام التسجيل الإلكتروني</h4>
-                            <p class="text-muted mb-4">كلية الهندسة التكنولوجية</p>
-
-                            <p class="fw-semibold mb-2">روابط هامة:</p>
-
-                            <div class="d-grid gap-2 col-8 col-md-6 mx-auto">
-                                <a href="#" class="btn btn-secondary">
-                                    بوابة البلقاء الإلكترونية
-                                </a>
-                                <a href="#" class="btn btn-secondary">
-                                    تقييم المدرسين
-                                </a>
-                            </div>
-
-                            <!-- Theme toggle (optional) -->
-                            <div class="mt-lg-auto mt-4">
-                                <i class="bi bi-brightness-high-fill" id="theme-toggle-light" style="cursor:pointer;" onclick="toggleTheme('light')"></i>
-                                <i class="bi bi-moon-stars-fill" id="theme-toggle-dark" style="cursor:pointer;" onclick="toggleTheme('dark')"></i>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-
+        
+        <div class="card-header bg-primary text-white text-center py-4 border-0">
+            <div class="d-flex align-items-center justify-content-center mx-auto mb-3"
+                 style="width: 80px; height: 80px;">
+                <img src="{% static 'images/logo.png' %}" alt="University Logo"
+                    style="width: 80px; height: 80px; object-fit: contain;">
             </div>
+            <h5 class="fw-bold mb-1">كلية الهندسة التكنولوجية</h5>
+            <p class="mb-0 small opacity-75">نظام التسجيل الإلكتروني</p>
+        </div>
+
+        <div class="card-body p-4">
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-danger py-2 text-center small">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" id="floatingInput" placeholder="رقم الطالب" name="student_id">
+                    <label for="floatingInput" class="text-end w-100" style="transform-origin: right top">رقم الطالب</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="floatingPassword" placeholder="كلمة السر" name="password">
+                    <label for="floatingPassword" class="text-end w-100" style="transform-origin: right top">كلمة السر</label>
+                </div>
+
+                <div class="d-grid mb-2">
+                    <button type="submit" class="btn btn-portal">تسجيل الدخول</button>
+                </div>
+
+                {% comment %} <div class="text-center">
+                    <a href="#" class="small text-muted link-offset-2">نسيت كلمة المرور؟</a>
+                </div> {% endcomment %}
+            </form>
+
+            <hr class="my-3">
+
+            <p class="text-center text-muted small mb-3">روابط مفيدة</p>
+            <div class="d-grid gap-2">
+                <a href="#" class="btn btn-outline-secondary">بوابة البلقاء الإلكترونية</a>
+                <a href="#" class="btn btn-outline-secondary">تقييم المدرسين</a>
+            </div>
+
         </div>
     </div>
+
+    <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-outline-secondary btn d-flex align-items-center gap-1" onclick="toggleTheme('light')">
+            <i class="bi bi-brightness-high-fill"></i>
+        </button>
+        <button class="btn btn-outline-secondary btn d-flex align-items-center gap-1" onclick="toggleTheme('dark')">
+            <i class="bi bi-moon-stars-fill"></i>
+        </button>
+    </div>
+
+    <p class="text-muted small mt-3 mb-0">جامعة البلقاء التطبيقية &copy; 2026</p>
+
+</div>
 {% endblock %}
