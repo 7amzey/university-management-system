@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SectionSchedule, Subject, CourseSection, GradeDistribution, RegistrationPeriod, RegistrationWindow, SectionRequest
+from .models import SectionSchedule, Subject, CourseSection, GradeDistribution, RegistrationPeriod, RegistrationWindow, SectionRequest, ExamSchedule
 from apps.students.views import get_current_semester
 
 class GradeDistributionInline(admin.TabularInline):
@@ -18,11 +18,11 @@ class SubjectAdmin(admin.ModelAdmin):
 class SectionScheduleInline(admin.TabularInline):
     model = SectionSchedule
     extra = 3
-    fields = ('day', 'start_time', 'end_time')
+    fields = ('instructor', 'room', 'day', 'start_time', 'end_time')
 
 @admin.register(CourseSection)
 class CourseSectionAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'instructor', 'room', 'semester', 'year', 'capacity')
+    list_display = ('__str__', 'semester', 'year', 'capacity')
     list_filter = ('semester', 'year', 'subject__department')
     search_fields = ('subject__name', 'subject__code')
     actions = ['assign_symbols']
@@ -127,3 +127,10 @@ class GradeDistributionAdmin(admin.ModelAdmin):
     list_filter = ('semester', 'year', 'subject__department')
     search_fields = ('subject__name', 'subject__code')
     ordering = ('subject', 'semester', 'year', '-min_grade')
+
+@admin.register(ExamSchedule)
+class ExamScheduleAdmin(admin.ModelAdmin):
+    list_display = ('section', 'date', 'start_time', 'end_time', 'mid')
+    list_filter = ('section__semester', 'section__year', 'mid')
+    search_fields = ('section__subject__name', 'section__subject__code')
+    filter_horizontal = ('room',)

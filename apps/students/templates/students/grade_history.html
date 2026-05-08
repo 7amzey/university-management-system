@@ -20,7 +20,7 @@
             <!-- Cumulative GPA card -->
             <div class="row g-3 mb-4">
                 <div class="col-12 col-md-4">
-                    <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="card border shadow-sm text-center p-3">
                         <div class="text-muted small mb-1">المعدل التراكمي الكلي</div>
                         <div class="fs-1 fw-bold">
                             {{ cumulative_gpa|default:"0.00" }}
@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
-                    <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="card border shadow-sm text-center p-3">
                         <div class="text-muted small mb-1">ساعات النجاح التراكمية</div>
                         <div class="fs-1 fw-bold">
                             {{ student.passed_hours }}
@@ -36,7 +36,7 @@
                     </div>
                 </div>
                 <div class="col-12 col-md-4">
-                    <div class="card border-0 shadow-sm text-center p-3">
+                    <div class="card border shadow-sm text-center p-3">
                         <div class="text-muted small mb-1">عدد الفصول</div>
                         <div class="fs-1 fw-bold">
                             {{ semesters|length }}
@@ -49,7 +49,7 @@
             {% if semesters %}
             <div class="accordion" id="semestersAccordion">
                 {% for sem in semesters %}
-                    <div class="accordion-item border-0 shadow-sm mb-3 rounded-3 overflow-hidden">
+                    <div class="accordion-item border shadow-sm mb-3 rounded-3 overflow-hidden">
 
                         <h2 class="accordion-header">
                             <button class="accordion-button {% if not forloop.first %}collapsed{% endif %} fw-bold"
@@ -58,9 +58,9 @@
                                     data-bs-target="#sem{{ forloop.counter }}"
                                     aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
 
-                                <div class="d-flex align-items-center justify-content-between w-100 me-3">
+                                <div class="d-flex align-items-center justify-content-between w-100">
                                     <span>{{ sem.reg.get_semester_display }} {{ sem.reg.year }}</span>
-                                    <div class="d-flex gap-3">
+                                    <div class="d-flex gap-2 ms-2">
                                         <span class="badge bg-primary">
                                             معدل الفصل: {{ sem.semester_gpa|default:"—" }}
                                         </span>

@@ -64,8 +64,7 @@ def student_required(view_func):
 def dashboard(request):
     student = request.user.student_profile
 
-    DAY_MAP = {6: 'ح', 0: 'ن', 1: 'ث', 2: 'ر', 3: 'خ', 4: 'ج', 5: 'س'}
-    today_day = DAY_MAP.get(timezone.now().weekday())
+    today_day = timezone.now().weekday()
     today_schedules = []
 
     latest_reg = student.hour_registrations.order_by('-year', '-semester').first()
@@ -77,29 +76,25 @@ def dashboard(request):
 
     if latest_reg:
         current_enrollments = latest_reg.enrollments.select_related(
-            'section__subject',
-            'section__instructor',
-            'section__room'
-        )
+            'section__subject'
+        ).prefetch_related('section__schedules__room')
 
-        today_schedules = SectionSchedule.objects.filter(
+        today_schedule = SectionSchedule.objects.filter(
             section__in=[e.section for e in current_enrollments],
             day=today_day
         ).select_related(
-            'section__subject',
-            'section__instructor',
-            'section__room'
-        ).order_by('start_time')
+            'section__subject'
+        ).prefetch_related('section__schedules__room').order_by('start_time')
 
         midterm_exams = ExamSchedule.objects.filter(
             section__in=[e.section for e in current_enrollments],
             mid=True
-        ).select_related('section__subject', 'room').order_by('date', 'start_time')
+        ).select_related('section__subject').order_by('date', 'start_time')
 
         final_exams = ExamSchedule.objects.filter(
             section__in=[e.section for e in current_enrollments],
             mid=False
-        ).select_related('section__subject', 'room').order_by('date', 'start_time')
+        ).select_related('section__subject').order_by('date', 'start_time')
 
     context = {
         'student': student,
@@ -110,7 +105,7 @@ def dashboard(request):
         'midterm_exams': midterm_exams,
         'final_exams': final_exams,
         'absences': absences,
-        'today_schedules': today_schedules,
+        'today_schedule': today_schedule,
     }
     return render(request, 'students/dashboard.html', context)
 
@@ -173,15 +168,15 @@ def finance(request):
         is_paid=False
     ).aggregate(total=Sum('amount'))['total'] or 0
 
-    total_payments = transactions.filter(
-        transaction_type='payment',
-        is_service=False
-    ).aggregate(total=Sum('amount'))['total'] or 0
+    # total_payments = transactions.filter(
+    #     transaction_type='payment',
+    #     is_service=False
+    # ).aggregate(total=Sum('amount'))['total'] or 0
 
     context = {
         'student': student,
         'transactions': transactions,
-        'total_payments': total_payments,
+        'total_payments': student.balance,
         'pending': pending,
         'existing_reg': existing_reg,
         'current_semester': current_semester,
@@ -189,7 +184,6 @@ def finance(request):
     }
     return render(request, 'students/finance.html', context)
 
-# students/views.py
 
 def payment_lookup(request):
     if request.method == 'POST':
@@ -495,6 +489,13 @@ def course_catalog(request):
             if enrollment_id not in pending_drops:
                 pending_drops.append(enrollment_id)
                 set_pending_drops(request, pending_drops)
+        elif action == 'remove_pending':
+            section_id = request.POST.get('section_id')
+            subject_id = CourseSection.objects.get(id=section_id).subject.id
+            pending_dict = get_pending_sections(request)
+            pending_dict.pop(str(subject_id), None)
+            set_pending_sections(request, pending_dict)
+            messages.success(request, f'تمت إزالة {CourseSection.objects.get(id=section_id).subject.name} من جدولك المؤقت.')
         return redirect('apps.students:course_catalog')
 
     # everything below is GET only
@@ -511,12 +512,11 @@ def course_catalog(request):
 
     confirmed_enrollments = Enrollment.objects.filter(
         hour_registration=hour_reg
-    ).select_related('section__subject', 'section__room', 'section__instructor')
+    ).select_related('section__subject').prefetch_related('section__schedules__instructor', 'section__schedules__room')
 
     confirmed_subject_ids = set(e.section.subject_id for e in confirmed_enrollments)
     confirmed_hours = sum(
         e.section.subject.hours for e in confirmed_enrollments
-        if str(e.id) not in pending_drops
     )
 
     if period and window and hour_reg:
@@ -524,8 +524,9 @@ def course_catalog(request):
             pending_sections = list(
                 CourseSection.objects.filter(
                     id__in=pending_dict.values()
-                ).select_related('subject', 'room', 'instructor')
+                ).select_related('subject').prefetch_related('schedules__instructor', 'schedules__room')
             )
+
 
         pending_hours = sum(s.subject.hours for s in pending_sections)
         pending_subject_ids = {int(k) for k in pending_dict.keys()}
@@ -551,8 +552,8 @@ def course_catalog(request):
             'subject_id': enrollment.section.subject_id,
             'section_id': enrollment.section_id,
             'schedules': enrollment.section.schedules.all(),
-            'instructor': enrollment.section.instructor,
-            'room': enrollment.section.room,
+            'instructor': enrollment.section.instructors,
+            'room': enrollment.section.rooms,
             'status': 'confirmed',
             'enrollment_id': enrollment.id,
         })
@@ -565,11 +566,13 @@ def course_catalog(request):
             'subject_id': section.subject_id,
             'section_id': section.id,
             'schedules': section.schedules.all(),
-            'instructor': section.instructor,
-            'room': section.room,
+            'instructor': section.instructors,
+            'room': section.rooms,
             'status': 'pending',
             'enrollment_id': None,
         })
+
+    schedule.sort(key=lambda x: (x['schedules'][0].day, x['schedules'][0].start_time) if x['schedules'] else (99, 99))
 
     context = {
         'student': student,
@@ -613,9 +616,7 @@ def subject_sections(request, subject_id):
         subject=subject,
         semester=current_semester,
         year=current_year
-    ).prefetch_related('schedules').select_related(
-        'instructor', 'room'
-    ).annotate(confirmed_count=Count('enrollments'))
+    ).prefetch_related('schedules', 'schedules__instructor', 'schedules__room').annotate(confirmed_count=Count('enrollments'))
 
     confirmed_enrollment = Enrollment.objects.filter(
         student=student,
@@ -637,8 +638,13 @@ def subject_sections(request, subject_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
-        section_id = int(request.POST.get('section_id'))
-        section = get_object_or_404(CourseSection, id=section_id)
+        if action != 'drop':
+            section_id = int(request.POST.get('section_id'))
+            section = get_object_or_404(CourseSection, id=section_id)
+
+        if action not in ['enroll', 'remove_pending', 'request', 'drop']:
+            messages.error(request, 'إجراء غير صالح.')
+            return redirect('apps.students:subject_sections', subject_id=subject_id)
 
         if action == 'enroll':
             if section.enrollments.count() >= section.capacity:
@@ -648,10 +654,10 @@ def subject_sections(request, subject_id):
             new_schedules = list(section.schedules.all())
             conflict = False
             conflict_subject = ''
-
+            pending_drops = get_pending_drops(request)
             for enrollment in Enrollment.objects.filter(
                 hour_registration=hour_reg
-            ).exclude(section__subject=subject).prefetch_related('section__schedules'):
+            ).exclude(section__subject=subject).exclude(id__in=pending_drops).prefetch_related('section__schedules'):
                 for es in enrollment.section.schedules.all():
                     for ns in new_schedules:
                         if (es.day == ns.day and
@@ -685,6 +691,7 @@ def subject_sections(request, subject_id):
             pending_dict[str(subject_id)] = section_id
             set_pending_sections(request, pending_dict)
             messages.success(request, f'تمت إضافة {subject.name} إلى جدولك المؤقت.')
+            return redirect('apps.students:course_catalog')
 
         elif action == 'remove_pending':
             pending_dict.pop(str(subject_id), None)
@@ -709,6 +716,15 @@ def subject_sections(request, subject_id):
                 body=f'الطالب {student.full_name_ar} ({student.student_id}) يطلب فتح شعبة {section.subject.name}.'
             )
             messages.success(request, 'تم إرسال طلب فتح الشعبة.')
+        elif action == 'drop':
+            enrollment_id = request.POST.get('enrollment_id')
+            pending_drops = get_pending_drops(request)
+            if enrollment_id not in pending_drops:
+                pending_drops.append(enrollment_id)
+                set_pending_drops(request, pending_drops)
+                messages.success(request, f'تمت إضافة {subject.name} إلى المواد الغير مثبتة للحذف.')
+            else:
+                messages.success(request, f'{subject.name} بالفعل في المواد الغير مثبتة للحذف.')
 
         return redirect('apps.students:subject_sections', subject_id=subject_id)
 
@@ -718,6 +734,7 @@ def subject_sections(request, subject_id):
         'confirmed_enrollment': confirmed_enrollment,
         'pending_section_id': pending_section_id,
         'requested_section_ids': requested_section_ids,
+        'pending_drops': get_pending_drops(request),
     }
     return render(request, 'students/subject_sections.html', context)
 
@@ -741,22 +758,37 @@ def submit_enrollment(request):
         messages.error(request, 'يجب دفع رسوم تسجيل الساعات أولاً.')
         return redirect('apps.students:finance')
 
-    pending_dict = get_pending_sections(request)
-    if not pending_dict:
-        messages.error(request, 'لا توجد مواد معلقة للتأكيد.')
+    pending_drops = get_pending_drops(request)
+    pending_dict = get_pending_sections(request)    
+    if not pending_dict and not pending_drops:
+        messages.info(request, 'لا توجد مواد غير مثبتة للتأكيد.')
         return redirect('apps.students:course_catalog')
-
-    pending_sections = list(
-        CourseSection.objects.filter(
-            id__in=pending_dict.values()
-        ).select_related('subject')
-    )
 
     confirmed_hours = Enrollment.objects.filter(
         hour_registration=hour_reg
     ).aggregate(
         total=Sum('section__subject__hours')
     )['total'] or 0
+
+    if pending_drops:
+        if confirmed_hours - sum(e.section.subject.hours for e in Enrollment.objects.filter(id__in=pending_drops, student=student)) < student.min_hours:
+            messages.error(
+                request,
+                f'لا يمكنك حذف هذه المواد لأنها ستقلل ساعاتك إلى أقل من الحد الأدنى ({student.min_hours} ساعة).'
+            )
+            set_pending_drops(request, [])
+            return redirect('apps.students:course_catalog')
+        else:
+            Enrollment.objects.filter(id__in=pending_drops, student=student).delete()
+            set_pending_drops(request, [])
+            messages.success(request, f'تم حذف {len(pending_drops)} مادة من جدولك.')
+            return redirect('apps.students:course_catalog')
+
+    pending_sections = list(
+        CourseSection.objects.filter(
+            id__in=pending_dict.values()
+        ).select_related('subject')
+    )
 
     pending_hours = sum(s.subject.hours for s in pending_sections)
     total_hours = confirmed_hours + pending_hours
@@ -794,24 +826,11 @@ def submit_enrollment(request):
                 section=section,
                 hour_registration=hour_reg
             )
-    
-    pending_drops = get_pending_drops(request)
-    if pending_drops:
-        Enrollment.objects.filter(id__in=pending_drops, student=student).delete()
 
     clear_pending_sections(request)
-    set_pending_drops(request, [])
     messages.success(request, f'تم تأكيد تسجيل {len(pending_sections)} مادة بنجاح.')
     return redirect('apps.students:course_catalog')
 
-@student_required
-def drop_section(request, enrollment_id):
-    student = request.user.student_profile
-    enrollment = get_object_or_404(Enrollment, id=enrollment_id, student=student)
-    name = enrollment.section.subject.name
-    enrollment.delete()
-    messages.success(request, f'تم حذف {name} من جدولك.')
-    return redirect('apps.students:course_catalog')
 
 @student_required
 def services(request):
@@ -905,6 +924,11 @@ def drop_by_code(request):
     student = request.user.student_profile
     current_year = timezone.now().year
     current_semester = get_current_semester()
+    reg_period = RegistrationPeriod.objects.filter(
+        semester=current_semester,
+        year=current_year,
+        is_open=True
+    ).first()
     code = request.POST.get('subject_code', '').strip()
 
     enrollment = Enrollment.objects.filter(
@@ -915,12 +939,15 @@ def drop_by_code(request):
         status='active'  # can't drop already dropped
     ).first()
 
-    if not enrollment:
-        messages.error(request, f'لا يوجد تسجيل فعال لمادة برمز {code} في هذا الفصل.')
+    if not reg_period:
+        if not enrollment:
+            messages.error(request, f'لا يوجد تسجيل فعال لمادة برمز {code} في هذا الفصل.')
+        else:
+            enrollment.status = 'dropped'
+            enrollment.save()
+            messages.success(request, f'تم اسقاط مادة {enrollment.section.subject.name} بنجاح.')
     else:
-        enrollment.status = 'dropped'
-        enrollment.save()
-        messages.success(request, f'تم اسقاط مادة {enrollment.section.subject.name} بنجاح.')
+        messages.error(request, 'لا يمكن استخدام هذا الخيار أثناء فترة التسجيل. الرجاء استخدام صفحة تسجيل المواد لإجراء التعديلات على جدولك.')
 
     return redirect('apps.students:services')
 
@@ -933,13 +960,13 @@ def pdf_study_plan(request):
     doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     story = []
 
-    # header
-    story.append(Paragraph(ar('جامعة البلقاء التطبيقية'), ar_style(size=16)))
-    story.append(Paragraph(ar(f'الخطة المفرغة للطالب: {student.full_name_ar}'), ar_style(size=13)))
-    story.append(Paragraph(ar(f'الرقم الجامعي: {student.student_id}'), ar_style()))
-    story.append(Paragraph(ar(f'التخصص: {student.major}'), ar_style()))
-    story.append(Paragraph(ar(f'الكلية: {student.college}'), ar_style()))
-    story.append(Spacer(1, 20))
+    from apps.students.pdf_utils import pdf_header
+    pdf_header(story, [
+        f'الخطة المفرغة للطالب: {student.full_name_ar}',
+        f'الرقم الجامعي: {student.student_id}',
+        f'التخصص: {student.major}',
+        f'الكلية: {student.college}',
+    ])
 
     # group subjects by type
     from apps.courses.constants import SUBJECT_TYPES
@@ -971,16 +998,18 @@ def pdf_study_plan(request):
         story.append(Spacer(1, 6))
 
         # table header — reversed for RTL
-        data = [[ar('الحالة'), ar('العلامة'), ar('الساعات'), ar('اسم المادة'), ar('الرمز')]]
+        data = [[ar('المتطلبات السابقة'), ar('الحالة'), ar('العلامة'), ar('الساعات'), ar('اسم المادة'), ar('الرمز')]]
 
         for subject in type_subjects:
             symbol = passed_enrollments.get(subject.id, '')
             if subject.id in passed_ids:
-                status = ar('مكتملة')
+                status = 'مكتملة'
             else:
-                status = ar('لم تدرس')
+                status = 'لم تدرس'
 
+            prereqs = '\n'.join(s.code for s in subject.prerequisites.all()) or '—'
             data.append([
+                ar(prereqs),
                 ar(status),
                 ar(symbol),
                 ar(str(subject.hours)),
@@ -988,7 +1017,7 @@ def pdf_study_plan(request):
                 ar(subject.code),
             ])
 
-        table = Table(data, colWidths=[70, 60, 60, 200, 80])
+        table = Table(data, colWidths=[120, 60, 50, 50, 160, 70])
         table.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (-1, -1), 'Amiri'),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
@@ -1020,12 +1049,13 @@ def pdf_schedule(request):
     doc = SimpleDocTemplate(response, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
     story = []
 
-    # header
-    story.append(Paragraph(ar('جامعة البلقاء التطبيقية'), ar_style(size=16)))
-    story.append(Paragraph(ar(f'جدول الطالب: {student.full_name_ar}'), ar_style(size=13)))
-    story.append(Paragraph(ar(f'الرقم الجامعي: {student.student_id}'), ar_style()))
-    story.append(Paragraph(ar(f'الفصل الدراسي: {current_semester} / {current_year}'), ar_style()))
-    story.append(Spacer(1, 20))
+    # header    
+    from apps.students.pdf_utils import pdf_header
+    pdf_header(story, [
+        f'جدول الطالب: {student.full_name_ar}',
+        f'الرقم الجامعي: {student.student_id}',
+        f'الفصل الدراسي: {current_semester} / {current_year}',
+    ])
 
     hour_reg = student.hour_registrations.filter(
         semester=current_semester,
@@ -1039,9 +1069,7 @@ def pdf_schedule(request):
 
     enrollments = hour_reg.enrollments.select_related(
         'section__subject',
-        'section__instructor',
-        'section__room'
-    ).prefetch_related('section__schedules')
+    ).prefetch_related('section__schedules', 'section__schedules__instructor', 'section__schedules__room')
 
     # table header
     data = [[
@@ -1057,15 +1085,21 @@ def pdf_schedule(request):
     for enrollment in enrollments:
         section = enrollment.section
         schedules = section.schedules.all()
-        days = ' / '.join(s.get_day_display() for s in schedules)
-        times = ' / '.join(f'{s.start_time.strftime("%H:%M")}-{s.end_time.strftime("%H:%M")}' for s in schedules)
-        instructor = f'{section.instructor.first_name_ar} {section.instructor.last_name_ar}'
+        days = '\n'.join(s.get_day_display() for s in schedules)
+        times = '\n'.join(f'{s.start_time.strftime("%H:%M")}-{s.end_time.strftime("%H:%M")}' for s in schedules)
+        instructors = '\n'.join(dict.fromkeys(
+            f'{s.instructor.first_name_ar} {s.instructor.last_name_ar}'
+            for s in schedules if s.instructor
+        ))
+        rooms = '\n'.join(dict.fromkeys(
+            str(s.room) for s in schedules if s.room
+        ))
 
         data.append([
             ar(days),
             ar(times),
-            ar(str(section.room)),
-            ar(instructor),
+            ar(rooms),
+            ar(instructors),
             ar(str(section.subject.hours)),
             ar(section.subject.name),
             ar(section.subject.code),

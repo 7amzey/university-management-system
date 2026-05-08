@@ -3,6 +3,7 @@ from apps.academics.models import Department, Major
 from apps.instructors.models import Instructor
 from apps.facilities.models import Room
 from .constants import SUBJECT_TYPES
+from django.core.validators import MinValueValidator
 
 
 class Subject(models.Model):
@@ -69,32 +70,43 @@ class CourseSection(models.Model):
         (3, 'الفصل الصيفي'),
     ]
 
-    section_id = models.IntegerField()
+    section_id = models.IntegerField(validators=[
+        MinValueValidator(1),
+    ])
     subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name='sections')
-    instructor = models.ForeignKey(Instructor, on_delete=models.PROTECT, related_name='sections')
-    room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='sections')
     semester = models.IntegerField(choices=SEMESTER_CHOICES)
     year = models.IntegerField()
     capacity = models.IntegerField()  # max students allowed in this section
 
 
     def __str__(self):
-        return f"{self.subject.code} - {self.instructor} ({self.get_semester_display()} {self.year})"
+        return f"{self.subject.name}"
 
     @property
     def is_full(self):
         return self.enrollments.count() >= self.capacity
     
+    @property
+    def instructors(self):
+        return Instructor.objects.filter(
+            schedules__section=self
+        ).distinct()
+    
+    @property
+    def rooms(self):
+        from apps.facilities.models import Room
+        return Room.objects.filter(schedules__section=self).distinct()
+
 
 class SectionSchedule(models.Model):
     DAYS_OF_WEEK = [
-        ('ح', 'Sunday'),
-        ('ن', 'Monday'),
-        ('ث', 'Tuesday'),
-        ('ر', 'Wednesday'),
-        ('خ', 'Thursday'),
-        ('ج', 'Friday'),
-        ('س', 'Saturday'),
+        (0, 'ح'),
+        (1, 'ن'),
+        (2, 'ث'),
+        (3, 'ر'),
+        (4, 'خ'),
+        (5, 'ج'),
+        (6, 'س'),
     ]
 
     section = models.ForeignKey(
@@ -102,7 +114,14 @@ class SectionSchedule(models.Model):
         on_delete=models.CASCADE,
         related_name='schedules'
     )
-    day = models.CharField(max_length=2, choices=DAYS_OF_WEEK)
+    instructor = models.ForeignKey(
+        'instructors.Instructor',
+        on_delete=models.PROTECT,
+        related_name='schedules',
+        null=True, blank=True
+    )
+    room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='schedules', null=True, blank=True)
+    day = models.IntegerField(max_length=2, choices=DAYS_OF_WEEK)
     start_time = models.TimeField()
     end_time = models.TimeField()
 
@@ -110,7 +129,7 @@ class SectionSchedule(models.Model):
         ordering = ['day', 'start_time']
 
     def __str__(self):
-        return f"{self.day} {self.start_time} - {self.end_time}"
+        return f"{self.get_day_display()} {self.start_time} - {self.end_time}"
     
 class ExamSchedule(models.Model):
     section = models.ForeignKey(
@@ -123,7 +142,7 @@ class ExamSchedule(models.Model):
     date = models.DateField()
     start_time = models.TimeField()
     end_time = models.TimeField()
-    room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name='exam_schedules')
+    room = models.ManyToManyField(Room, related_name='exam_schedules')
     mid = models.BooleanField(default=True)
 
     class Meta:

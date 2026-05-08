@@ -19,6 +19,17 @@ def handle_hour_registration(sender, instance, created, **kwargs):
             is_system_generated=True,
             note=f"رسوم تسجيل {instance.requested_hours} ساعة"
         )
+        Transaction.objects.create(
+            student=instance.student,
+            transaction_type='charge',
+            fee_type='registration',
+            amount=55,
+            semester=instance.semester,
+            year=instance.year,
+            is_service=True,
+            is_system_generated=True,
+            note="رسوم تسجيل فصل"           
+        )
 
     else:
         if not instance.is_paid:

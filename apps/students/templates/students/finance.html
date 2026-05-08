@@ -20,7 +20,7 @@
             <div class="row row-cols-1 row-cols-md-2 g-2 mb-2">
                 <div class="col">
                     <div class="d-flex flex-column bg-primary bg-opacity-25 border border-2 border-primary rounded-3 p-3 h-100 justify-content-between">
-                        <h5 class="fw-semibold">المبالغ المدفوعة</h5>
+                        <h5 class="fw-semibold">الرصيد الحالي</h5>
                         <span class="fs-4 mt-2">{{ total_payments|floatformat:2 }}</span>
                     </div>
                 </div>
@@ -30,6 +30,14 @@
                         <span class="fs-4 mt-2">{{ pending|floatformat:2 }}</span>
                     </div>
                 </div>
+            </div>
+            <div class="row mt-3 px-3">
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
             </div>
             <div class="row mt-3 px-3">
                 <form class="p-0" dir="ltr" method="POST">

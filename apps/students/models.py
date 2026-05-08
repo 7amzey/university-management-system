@@ -104,24 +104,20 @@ class Student(models.Model):
     def balance(self):
         from django.db.models import Sum
         from apps.finance.models import Transaction
-
-        pending = self.transactions.filter(
-            transaction_type='charge',
-            is_paid=False,
-            is_service=False
-        ).aggregate(total=Sum('amount'))['total'] or 0
-
-        payments = self.transactions.filter(
+        # Money deposited: semester charges that were confirmed as paid by staff
+        semester_paid = self.transactions.filter(
+            fee_type='semester',
             transaction_type='payment',
-            is_service=False
         ).aggregate(total=Sum('amount'))['total'] or 0
 
-        refunds = self.transactions.filter(
-            transaction_type='refund',
-            is_service=False
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        # Money consumed: per-subject enrollment charges (auto-created on enrollment, removed on drop)
+        enrollments = 0
+        for enrollment in self.enrollments.filter(
+            hour_registration__is_paid=True
+        ).select_related('section__subject'):
+            enrollments += enrollment.section.subject.hours * self.major.hour_fee
 
-        return payments + refunds - pending
+        return semester_paid - enrollments
 
     @property
     def passed_hours(self):
@@ -221,6 +217,7 @@ class Enrollment(models.Model):
 class absence(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='absences')
     count = models.IntegerField(default=0)
+
     
     def __str__(self):
-        return f"Absence for {self.enrollment.student.full_name_ar} on {self.date}"
+        return f"Absence for {self.enrollment.student.full_name_ar}"

@@ -80,3 +80,23 @@ $theme-colors: map-merge(
   background-color: var(--bs-emphasis-color) !important;
   color: var(--bs-body-bg) !important;
 }
+
+#desktopSidebar nav::-webkit-scrollbar {
+    width: 4px;
+}
+#desktopSidebar nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+#desktopSidebar nav::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+}
+#desktopSidebar nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Firefox */
+#desktopSidebar nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.35) transparent;
+}

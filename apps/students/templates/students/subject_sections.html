@@ -18,25 +18,20 @@
             <hr>
 
             <div class="d-flex align-items-center gap-3 mb-4">
-                <a href="{% url 'apps.students:course_catalog' %}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-arrow-right me-1"></i> رجوع
-                </a>
                 <div>
                     <h5 class="fw-bold mb-0">{{ subject.name }}</h5>
                     <small class="text-muted">{{ subject.code }} — {{ subject.hours }} ساعات</small>
                 </div>
             </div>
 
-            {% if confirmed_enrollment %}
-            <div class="alert alert-success">
-                <i class="bi bi-check-circle-fill me-1"></i>
-                مسجل مؤكد في شعبة <strong>{{ confirmed_enrollment.section }}</strong>
-            </div>
-            {% elif pending_section_id %}
-            <div class="alert alert-warning">
-                <i class="bi bi-clock me-1"></i>
-                لديك شعبة معلقة — يمكنك تغييرها أو تأكيدها من صفحة التسجيل
-            </div>
+            {% if messages %}
+                <div class="row mb-3 px-3">
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
             {% endif %}
 
             <div class="row g-3">
@@ -57,45 +52,52 @@
                             </div>
 
                             <div class="text-muted small mb-3">
-                                <div><i class="bi bi-person me-1"></i> {{ section.instructor }}</div>
-                                <div><i class="bi bi-door-open me-1"></i> {{ section.room }}</div>
+                                {% for instructor in section.instructors %}
+                                    <div><i class="bi bi-person me-1"></i> {{ instructor.first_name_ar }} {{ instructor.last_name_ar }}{% if not forloop.last %}{% endif %}</div>
+                                {% endfor %}    
+                                <div>
+                                    {% for room in section.rooms.all %}
+                                        <i class="bi bi-door-open me-1"></i> {{ room }} {% if not forloop.last %} <br> {% endif %}
+                                    {% endfor %}
+                                </div>
                             </div>
 
                             {% if section.schedules.all %}
-                            <div class="mb-3">
-                                {% for schedule in section.schedules.all %}
-                                <span class="badge bg-secondary me-1">
-                                    {{ schedule.day }} {{ schedule.start_time|time:"H:i" }}–{{ schedule.end_time|time:"H:i" }}
-                                </span>
-                                {% endfor %}
-                            </div>
+                                <div class="mb-3">
+                                    {% for schedule in section.schedules.all %}
+                                    <span class="badge bg-secondary me-1">
+                                        {{ schedule.get_day_display }} {{ schedule.start_time|time:"H:i" }}–{{ schedule.end_time|time:"H:i" }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
                             {% endif %}
 
                             {% if section.confirmed_count < section.capacity %}
-                                <form method="POST">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="section_id" value="{{ section.id }}">
-                                    <input type="hidden" name="action" value="enroll">
-                                    <button type="submit" class="btn w-100
-                                        {% if pending_section_id == section.id %}btn-warning
-                                        {% elif confirmed_enrollment.section_id == section.id %}btn-success
-                                        {% else %}btn-primary{% endif %}">
-                                        {% if pending_section_id == section.id %}
-                                            <i class="bi bi-clock me-1"></i> معلق — تغيير؟
-                                        {% elif confirmed_enrollment.section_id == section.id %}
-                                            <i class="bi bi-check-circle me-1"></i> مؤكد — تغيير؟
-                                        {% else %}
-                                            <i class="bi bi-plus-circle me-1"></i> إضافة
-                                        {% endif %}
-                                    </button>
-                                </form>
                                 {% if pending_section_id == section.id %}
                                     <form method="POST" class="mt-1">
                                         {% csrf_token %}
                                         <input type="hidden" name="section_id" value="{{ section.id }}">
                                         <input type="hidden" name="action" value="remove_pending">
-                                        <button type="submit" class="btn btn-outline-danger w-100 btn-sm">
+                                        <button type="submit" class="btn btn-outline-danger w-100">
                                             <i class="bi bi-trash me-1"></i> إزالة
+                                        </button>
+                                    </form>
+                                {% elif confirmed_enrollment.section_id == section.id %}
+                                    <form method="POST" class="mt-1">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="enrollment_id" value="{{ confirmed_enrollment.id }}">
+                                        <input type="hidden" name="action" value="drop">
+                                        <button type="submit" class="btn btn-danger w-100">
+                                            <i class="bi bi-x-circle me-1"></i> حذف
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <form method="POST">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="section_id" value="{{ section.id }}">
+                                        <input type="hidden" name="action" value="enroll">
+                                        <button type="submit" class="btn w-100 btn-primary">
+                                                <i class="bi bi-plus-circle me-1"></i> إضافة
                                         </button>
                                     </form>
                                 {% endif %}
