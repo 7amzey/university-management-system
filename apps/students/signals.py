@@ -3,6 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import HourRegistration
 
+# When an HourRegistration is created or updated, we need to create/update the corresponding Transaction(s) for the student.
 @receiver(post_save, sender=HourRegistration, dispatch_uid='handle_hour_registration')
 def handle_hour_registration(sender, instance, created, **kwargs):
     from apps.finance.models import Transaction

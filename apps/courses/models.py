@@ -2,9 +2,15 @@ from django.db import models
 from apps.academics.models import Department, Major
 from apps.instructors.models import Instructor
 from apps.facilities.models import Room
-from .constants import SUBJECT_TYPES
+from .constants import SUBJECT_TYPES, DAYS_OF_WEEK, SYMBOLS, SEMESTER_CHOICES, STATUS
 from django.core.validators import MinValueValidator
 
+
+"""
+    Subject model represents an academic subject/course offered by the university.
+    It includes details like name, code, type, department, associated majors, credit hours, and prerequisites.
+    It also has a method to assign grade symbols to students based on their performance in a given semester and year.
+"""
 
 class Subject(models.Model):
     name = models.CharField(max_length=50)
@@ -23,6 +29,7 @@ class Subject(models.Model):
     def __str__(self):
         return f"({self.code}) {self.name}"
     
+    # This method calculates and assigns grade symbols to students enrolled in this subject for a specific semester and year.
     def assign_symbols(self, semester, year):
         from apps.students.models import Enrollment
 
@@ -63,6 +70,7 @@ class Subject(models.Model):
             enrollment.save()
 
 
+# CourseSection model represents a specific offering of a subject in a given semester and year.
 class CourseSection(models.Model):
     SEMESTER_CHOICES = [
         (1, 'الفصل الأول'),
@@ -82,33 +90,27 @@ class CourseSection(models.Model):
     def __str__(self):
         return f"{self.subject.name}"
 
+    # This property checks if the section has reached its maximum capacity based on the number of enrollments.
     @property
     def is_full(self):
         return self.enrollments.count() >= self.capacity
     
+    # This property retrieves the instructors teaching this section by looking up the related schedules and extracting the distinct instructors.
     @property
     def instructors(self):
         return Instructor.objects.filter(
             schedules__section=self
         ).distinct()
     
+    # This property retrieves the rooms assigned to this section by looking up the related schedules and extracting the distinct rooms.
     @property
     def rooms(self):
         from apps.facilities.models import Room
         return Room.objects.filter(schedules__section=self).distinct()
 
 
+# SectionSchedule model represents the schedule for a specific course section, including the day of the week, start and end times, assigned instructor, and room.
 class SectionSchedule(models.Model):
-    DAYS_OF_WEEK = [
-        (0, 'ح'),
-        (1, 'ن'),
-        (2, 'ث'),
-        (3, 'ر'),
-        (4, 'خ'),
-        (5, 'ج'),
-        (6, 'س'),
-    ]
-
     section = models.ForeignKey(
         CourseSection,
         on_delete=models.CASCADE,
@@ -131,6 +133,8 @@ class SectionSchedule(models.Model):
     def __str__(self):
         return f"{self.get_day_display()} {self.start_time} - {self.end_time}"
     
+
+# ExamSchedule model represents the schedule for exams (midterm and final) for a specific course section, including the date, time, assigned rooms, and whether it's a midterm or final exam.
 class ExamSchedule(models.Model):
     section = models.ForeignKey(
         CourseSection,
@@ -153,21 +157,8 @@ class ExamSchedule(models.Model):
         return f"{self.section} — {exam_type} {self.date}"
     
 
+# GradeDistribution model represents the mapping of grade symbols (like A, B+, etc.) to the minimum and maximum grade percentages for a specific subject in a given semester and year. This allows the system to assign letter grades to students based on their performance.
 class GradeDistribution(models.Model):
-    SYMBOLS = [
-        ('A',  'A',  4.00),
-        ('A-', 'A-', 3.75),
-        ('B+', 'B+', 3.50),
-        ('B',  'B',  3.00),
-        ('B-', 'B-', 2.75),
-        ('C+', 'C+', 2.50),
-        ('C',  'C',  2.00),
-        ('C-', 'C-', 1.75),
-        ('D+', 'D+', 1.50),
-        ('D',  'D',  1.00),
-        ('F*', 'F*', 0.50),
-    ]
-
     SYMBOL_CHOICES = [(s[0], s[1]) for s in SYMBOLS]
     SYMBOL_POINTS  = {s[0]: s[2] for s in SYMBOLS}
 
@@ -176,11 +167,7 @@ class GradeDistribution(models.Model):
         on_delete=models.CASCADE,
         related_name='grade_distributions'
     )
-    semester = models.IntegerField(choices=[
-        (1, 'الفصل الاول'),
-        (2, 'الفصل الثاني'),
-        (3, 'الفصل الصيفي'),
-    ])
+    semester = models.IntegerField(choices=SEMESTER_CHOICES)
     year = models.IntegerField()
     symbol = models.CharField(max_length=5, choices=SYMBOL_CHOICES)
     min_grade = models.DecimalField(max_digits=5, decimal_places=2)  # e.g. 87.00
@@ -192,12 +179,14 @@ class GradeDistribution(models.Model):
 
     def __str__(self):
         return f"{self.subject} {self.get_semester_display()} {self.year} — {self.symbol} ({self.min_grade}-{self.max_grade})"
+
+
+"""
+    RegistrationPeriod model represents the registration period for a specific semester and year, including the overall start and end dates for registration and whether the registration is currently open.
+    It also has a method to determine the active registration window for a student based on their completed hours.
+"""
 class RegistrationPeriod(models.Model):
-    semester = models.IntegerField(choices=[
-        (1, 'First Semester'),
-        (2, 'Second Semester'),
-        (3, 'Summer Semester'),
-    ])
+    semester = models.IntegerField(choices=SEMESTER_CHOICES)
     year = models.IntegerField()
     overall_start = models.DateField()
     overall_end = models.DateField()
@@ -209,8 +198,9 @@ class RegistrationPeriod(models.Model):
     def __str__(self):
         return f"{self.get_semester_display()} {self.year}"
 
+
+    """Returns the active window for a student based on their completed hours."""
     def get_window_for_student(self, student):
-        """Returns the active window for a student based on their completed hours."""
         from django.utils import timezone
         now = timezone.now()
         completed = student.passed_hours + student.failed_hours
@@ -223,6 +213,8 @@ class RegistrationPeriod(models.Model):
         ).first()
 
 
+
+# RegistrationWindow model represents a specific registration window within a registration period, defined by the minimum and maximum completed hours for students, as well as the start and end datetimes for that window.
 class RegistrationWindow(models.Model):
     period = models.ForeignKey(
         RegistrationPeriod,
@@ -241,13 +233,8 @@ class RegistrationWindow(models.Model):
         return f"{self.period} — {self.min_hours} to {self.max_hours} hrs (starts {self.start_datetime}, ends {self.end_datetime})"
 
 
+# SectionRequest model represents a student's request to enroll in a specific course section, including the status of the request (pending, approved, rejected), the date it was created, any notes from the student, and the staff member who handled the request.
 class SectionRequest(models.Model):
-    STATUS = [
-        ('pending', 'قيد الانتظار'),
-        ('approved', 'مقبول'),
-        ('rejected', 'مرفوض'),
-    ]
-
     student = models.ForeignKey(
         'students.Student',
         on_delete=models.CASCADE,

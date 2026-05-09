@@ -11,9 +11,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from django.conf import settings
 import os
 
-# register an Arabic font — download Amiri or use any Arabic TTF you have
-# place the font file in your project's static/fonts/ directory
-FONT_PATH = r'C:\Users\Hamze Younis\Desktop\StudentPortal_V2\university_management_system\static\fonts\Amiri-Regular.ttf'
+# register an Arabic font
+FONT_PATH = os.path.join(settings.BASE_DIR, 'static', 'fonts', 'Amiri-Regular.ttf')
 pdfmetrics.registerFont(TTFont('Amiri', FONT_PATH))
 def ar(text):
     """Reshape and reorder Arabic text for correct RTL rendering."""

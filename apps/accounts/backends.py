@@ -1,7 +1,7 @@
 from django.contrib.auth.backends import BaseBackend
 from .models import User
 
-
+# Custom authentication backends for students and instructors based on their id's (student_id and employee_id)
 class StudentBackend(BaseBackend):
     def authenticate(self, request, student_id=None, password=None):
         try:

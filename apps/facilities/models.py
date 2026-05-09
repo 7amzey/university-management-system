@@ -1,5 +1,6 @@
 from django.db import models
 
+# Building model represents a physical building on campus, which can contain multiple rooms. Each building has a unique name and number.
 class Building(models.Model):
     name = models.CharField(max_length=50, unique=True, blank=True, null=True)
     number = models.IntegerField(unique=True)
@@ -8,6 +9,7 @@ class Building(models.Model):
         return f"{self.name} (Building {self.number})"
 
 
+# Room model represents a specific room within a building. Each room has a floor number, room number, capacity, and type (e.g., lecture hall, lab, office). The combination of building, floor, and room number must be unique to prevent duplicate rooms in the same building.
 class Room(models.Model):
     ROOM_TYPES = [
         ('lecture', 'Lecture Hall'),

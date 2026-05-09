@@ -2,6 +2,12 @@
 from django.db import models
 from apps.students.models import Student
 
+
+"""
+    Ticketing system for student support requests. 
+    Each ticket is associated with a student and can have multiple messages between the student and support staff.
+    Tickets can be categorized and have a status to track their progress.
+"""
 class Ticket(models.Model):
     CATEGORIES = [
         ('academic', 'أكاديمي'),
@@ -30,6 +36,7 @@ class Ticket(models.Model):
         return f"{self.student} — {self.subject} ({self.get_status_display()})"
 
 
+# Each message in a ticket is linked to the ticket and has a sender (either the student or support staff).
 class TicketMessage(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey('accounts.User', on_delete=models.PROTECT, related_name='ticket_messages')

@@ -1,7 +1,11 @@
 from django.db import models
 from apps.students.models import Student
 
-
+"""
+    Transaction model to record all financial transactions related to students, including charges, payments, and refunds.
+    Each transaction is linked to a student and includes details such as the type of fee, amount, date, and any relevant notes. 
+    The model also tracks whether the transaction was system-generated and if it has been paid.
+"""
 class Transaction(models.Model):
     FEE_TYPES = [
         ( 'registration','رسوم تسجيل'),
@@ -24,9 +28,9 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     date = models.DateTimeField(auto_now_add=True)
     semester = models.IntegerField(choices=[
-        (1, 'First Semester'),
-        (2, 'Second Semester'),
-        (3, 'Summer Semester'),
+        (1, 'الفصل الأول'),
+        (2, 'الفصل الثاني'),
+        (3, 'الفصل الصيفي'),
     ], null=True, blank=True)
     year = models.IntegerField(null=True, blank=True)
     note = models.TextField(blank=True)

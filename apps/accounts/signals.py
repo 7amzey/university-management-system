@@ -4,6 +4,7 @@ from .models import User
 from apps.students.models import Student
 from apps.instructors.models import Instructor
 
+# Signal to create user profile based on role after user creation
 
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):

@@ -1,6 +1,7 @@
 from django.db.models import Q
 from django.utils import timezone
 
+# Context processor to count unseen announcements for a student
 def announcement_count(request):
     if not request.user.is_authenticated:
         return {}

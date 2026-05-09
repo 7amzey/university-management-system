@@ -4,9 +4,17 @@ from apps.academics.models import College, Major
 from apps.courses.models import CourseSection
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
+from .constants import DEGREE_CHOICES, FUNDING_ENTITY_CHOICES, ACCEPTANCE_TYPE_CHOICES, STUDY_TYPE_CHOICES, ACADEMIC_STATUS_CHOICES, SEMESTER_CHOICES, STATUS
 
-
+"""
+    Student model represents a university student with personal, academic, and contact information.
+    It is linked to the User model for authentication.
+    The model includes methods to calculate GPA, balance, passed hours, and failed hours based on enrollments and transactions.
+"""
 class Student(models.Model):
+
+
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
 
     # Name in English
@@ -36,34 +44,13 @@ class Student(models.Model):
 
     # University information
     student_id = models.CharField(max_length=11, unique=True, null=True, blank=True)
-    degree = models.CharField(max_length=50, choices=[
-        ('Diploma', 'دبلوم'),
-        ('Bachelor', 'بكالوريوس'),
-        ('Master', 'ماجستير'),
-        ('PhD', 'دكتوراه'),
-    ], blank=True)
+    degree = models.CharField(max_length=50, choices=DEGREE_CHOICES, blank=True)
     college = models.ForeignKey(College, on_delete=models.PROTECT, null=True, blank=True, related_name='students')
     major = models.ForeignKey(Major, on_delete=models.PROTECT, null=True, blank=True, related_name='students')
-    funding_entity = models.CharField(max_length=50, choices=[
-        ('Loan', 'قرض'),
-        ('Private', 'خاص'),
-        ('Scholarship', 'منحة'),
-    ], blank=True)
-    acceptance_type = models.CharField(max_length=50, choices=[
-        ('Competitive', 'تنافسي'),
-        ('Parallel', 'موازي'),
-    ], blank=True)
-    study_type = models.CharField(max_length=50, choices=[
-        ('Regular', 'نظامي'),
-        ('Affiliation', 'انتساب'),
-    ], blank=True)
-    academic_status = models.CharField(max_length=50, choices=[
-        ('Active', 'على مقاعد الدراسة'),
-        ('Graduating', 'متوقع تخرجه'),
-        ('Graduated', 'متخرج'),
-        ('Suspended', 'موقوف'),
-        ('Dropped', 'منسحب'),
-    ], blank=True)
+    funding_entity = models.CharField(max_length=50, choices=FUNDING_ENTITY_CHOICES, blank=True)
+    acceptance_type = models.CharField(max_length=50, choices=ACCEPTANCE_TYPE_CHOICES, blank=True)
+    study_type = models.CharField(max_length=50, choices=STUDY_TYPE_CHOICES, blank=True)
+    academic_status = models.CharField(max_length=50, choices=ACADEMIC_STATUS_CHOICES, blank=True)
     enrollment_year = models.IntegerField(null=True, blank=True)
     
     # Minimum and maximum hours allowed for enrollment
@@ -79,14 +66,17 @@ class Student(models.Model):
     def __str__(self):
         return f"({self.student_id}) {self.first_name} {self.last_name}"
 
+    # Return full name of the student in English
     @property
     def full_name(self):
         return f"{self.first_name} {self.father_name} {self.grandfather_name} {self.last_name}"
 
+    # Return full name of the student in Arabic
     @property
     def full_name_ar(self):
         return f"{self.first_name_ar} {self.father_name_ar} {self.grandfather_name_ar} {self.last_name_ar}"
 
+    # Calculate GPA based on enrollments with non-null grade points
     @property
     def gpa(self):
         enrollments = self.enrollments.filter(
@@ -99,7 +89,8 @@ class Student(models.Model):
         total_points = sum(e.grade_points * e.section.subject.hours for e in enrollments)
         total_hours = sum(e.section.subject.hours for e in enrollments)
         return round(total_points / total_hours, 2) if total_hours > 0 else None
-    
+
+    # Calculate the student's current balance based on paid semester fees and consumed hours from enrollments 
     @property
     def balance(self):
         from django.db.models import Sum
@@ -119,6 +110,7 @@ class Student(models.Model):
 
         return semester_paid - enrollments
 
+    # Calculate total passed hours based on enrollments with grade points above 0.5 (F* is failing, anything above is passing)
     @property
     def passed_hours(self):
         # F* = 0.5 points, anything above is passing
@@ -129,6 +121,7 @@ class Student(models.Model):
             total=Sum('section__subject__hours')
         )['total'] or 0
 
+    # Calculate total failed hours based on enrollments with grade points equal to 0.5 (F* is failing)
     @property
     def failed_hours(self):
         return self.enrollments.filter(
@@ -137,13 +130,12 @@ class Student(models.Model):
             total=Sum('section__subject__hours')
         )['total'] or 0
 
+
+# It represents a student's request to enroll in a certain number of hours for a specific semester and year, along with payment status and tracking of how many hours have been paid for. 
+# Each student can only have one hour registration per semester and year combination.
 class HourRegistration(models.Model):
     student = models.ForeignKey(Student, on_delete=models.PROTECT, related_name='hour_registrations')
-    semester = models.IntegerField(choices=[
-        (1, 'الفصل الاول'),
-        (2, 'الفصل الثاني'),
-        (3, 'الفصل الصيفي'),
-    ])
+    semester = models.IntegerField(choices=SEMESTER_CHOICES)
     year = models.IntegerField()
     requested_hours = models.IntegerField()
     is_paid = models.BooleanField(default=False)
@@ -156,13 +148,9 @@ class HourRegistration(models.Model):
         return f"{self.student} - {self.requested_hours} hrs ({self.get_semester_display()} {self.year})"
 
 
-class Enrollment(models.Model):
-    
-    STATUS = [
-        ('active', 'مسجل'),
-        ('dropped', 'منسحب'),
-    ]
 
+# Enrollment model represents the enrollment of a student in a specific course section for a given semester and year, along with their grades and status.
+class Enrollment(models.Model):
     # Fixed weights for grade calculation
     MID_WEIGHT = 30
     PARTICIPATION_WEIGHT = 20
@@ -188,6 +176,7 @@ class Enrollment(models.Model):
     class Meta:
         unique_together = ('student', 'section')
 
+    # Calculate the weighted total grade based on the raw grades and their respective weights. If the enrollment is dropped, or if any of the raw grades are missing, return None.
     def calculate_weighted_total(self):
         if self.status == 'dropped':
             return None
@@ -214,6 +203,9 @@ class Enrollment(models.Model):
     def __str__(self):
         return f"{self.student} - {self.section} ({self.get_status_display()})"
 
+
+# The Absence model tracks the number of absences a student has for a specific enrollment in a course section. 
+# It is linked to the Enrollment model, allowing us to associate absences with specific courses and semesters.
 class absence(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name='absences')
     count = models.IntegerField(default=0)

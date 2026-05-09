@@ -1,6 +1,7 @@
 from django.db import models
 from apps.students.models import Student
 
+# Announcement model to store system-generated and admin-created announcements for students
 class Announcement(models.Model):
     TRIGGER_TYPES = [
         ('payment_confirmed', 'تأكيد الدفع'),

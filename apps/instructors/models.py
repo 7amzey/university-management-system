@@ -2,7 +2,23 @@ from django.db import models
 from apps.accounts.models import User
 from apps.academics.models import College, Department
 
+"""
+    Instructor model to store information about instructors, linked to the User model for authentication and authorization. 
+    It includes personal details, university-related information, and contact details.
+"""
 class Instructor(models.Model):
+    RANK_CHOICES = [
+        ('Lecturer', 'محاضر'),
+        ('Assistant Professor', 'أستاذ مساعد'),
+        ('Associate Professor', 'أستاذ مشارك'),
+        ('Professor', 'أستاذ'),
+    ]
+
+    GENDER_CHOICES = [
+        ('Male', 'ذكر'),
+        ('Female', 'أنثى'),
+    ]
+
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='instructor_profile')
 
     # Name in English
@@ -16,19 +32,14 @@ class Instructor(models.Model):
     # Personal information
     national_id = models.CharField(max_length=10, unique=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    gender = models.CharField(max_length=10, choices=[('ذكر', 'Male'), ('أنثى', 'Female')], blank=True)
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True)
     nationality = models.CharField(max_length=30, blank=True)
 
     # University information
     employee_id = models.CharField(max_length=10, unique=True)
     college = models.ForeignKey(College, on_delete=models.PROTECT, related_name='instructors', null=True, blank=True)
     department = models.ForeignKey(Department, on_delete=models.PROTECT, related_name='instructors', null=True, blank=True)
-    rank = models.CharField(max_length=50, choices=[
-        ('Lecturer', 'محاضر'),
-        ('Assistant Professor', 'أستاذ مساعد'),
-        ('Associate Professor', 'أستاذ مشارك'),
-        ('Professor', 'أستاذ'),
-    ], blank=True)
+    rank = models.CharField(max_length=50, choices=RANK_CHOICES, blank=True)
 
     # Contact
     phone_number = models.CharField(max_length=10, blank=True, null=True)

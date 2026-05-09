@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from .managers import UserManager
 
+# Custom user model with role-based access control
+
 class User(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = [
         ('student', 'Student'),
