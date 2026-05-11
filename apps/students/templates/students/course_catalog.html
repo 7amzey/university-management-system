@@ -20,26 +20,26 @@
             <div class="row g-3 mb-4">
                 <div class="{% if period and hour_reg and window %} col-6 col-md-3 {% else %} col-6 {% endif %}">
                     <div class="card border shadow-sm text-center p-3">
-                        <div class="fs-3 fw-bold">{{ hour_reg.requested_hours }}</div>
+                        <div class="fs-3 fw-bold">{{ hour_reg.requested_hours|default:"0" }}</div>
                         <div class="text-muted small">الساعات المسجلة</div>
                     </div>
                 </div>
                 <div class="{% if period and hour_reg and window %} col-6 col-md-3 {% else %} col-6 {% endif %}">
                     <div class="card border shadow-sm text-center p-3">
-                        <div class="fs-3 fw-bold text-success">{{ confirmed_hours }}</div>
+                        <div class="fs-3 fw-bold text-success">{{ confirmed_hours|default:"0" }}</div>
                         <div class="text-muted small">ساعات مثبتة</div>
                     </div>
                 </div>
                 {% if period and hour_reg and window %}
                     <div class="col-6 col-md-3">
                         <div class="card border shadow-sm text-center p-3">
-                            <div class="fs-3 fw-bold text-warning">{{ pending_hours }}</div>
+                            <div class="fs-3 fw-bold text-warning">{{ pending_hours|default:"0" }}</div>
                             <div class="text-muted small">ساعات غير مثبتة</div>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
                         <div class="card border shadow-sm text-center p-3">
-                            <div class="fs-3 fw-bold text-primary">{{ total_hours }}</div>
+                            <div class="fs-3 fw-bold text-primary">{{ total_hours|default:"0" }}</div>
                             <div class="text-muted small">المجموع</div>
                         </div>
                     </div>
