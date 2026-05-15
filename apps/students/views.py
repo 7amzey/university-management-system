@@ -23,7 +23,7 @@ from apps.courses.models import SectionSchedule, Subject, CourseSection, ExamSch
 def student_login(request):
     # if already logged in and session indicates student portal, redirect to dashboard
     if request.user.is_authenticated and request.session.get('is_student_portal'):
-        return redirect('students:dashboard')
+        return redirect('apps.students:dashboard')
 
     # on POST, attempt authentication with student_id and password
     if request.method == 'POST':
