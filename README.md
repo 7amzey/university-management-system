@@ -1,6 +1,6 @@
-# University Management System — نظام التسجيل الإلكتروني
+# University Management System
 
-A full-featured electronic registration portal for **Al-Balqa Applied University – Faculty of Technological Engineering**, built with Django and Bootstrap 5 RTL. The system serves three user types — students, instructors, and staff — each with their own interface and authentication flow.
+A full-featured electronic registration portal for **Al-Balqa Applied University – Faculty of Engineering and Technology**, built with Django and Bootstrap 5 RTL. The system serves three user types — students, instructors, and staff — each with their own interface and authentication flow.
 
 ---
 
@@ -56,7 +56,6 @@ A full-featured electronic registration portal for **Al-Balqa Applied University
 | Frontend | Bootstrap 5.3 RTL |
 | PDF Generation | ReportLab + arabic-reshaper + python-bidi |
 | Arabic Font | Amiri |
-| Email | Gmail SMTP |
 | Authentication | Custom multi-backend (Student ID / Employee ID / Email) |
 
 ---
@@ -75,6 +74,7 @@ apps/
 ├── finance/         — Transaction
 ├── announcements/   — Announcement
 └── tickets/         — Ticket, TicketMessage
+
 ```
 
 ## Authentication
