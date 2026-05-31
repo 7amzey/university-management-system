@@ -7,7 +7,7 @@ A full-featured electronic registration portal for **Al-Balqa Applied University
 ## Features
 
 ### Student Portal
-- Login via student ID and password with password reset via email
+- Login via student ID and password
 - Course catalog with real-time schedule conflict detection
 - Pending enrollment basket (zero DB writes until confirmed)
 - Drop subjects from schedule with automatic balance refund
