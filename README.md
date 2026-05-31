@@ -125,6 +125,7 @@ pillow
 ## Screenshots
 
 ![Screenshot](screenshots/LoginPage.png)
+![Screenshot](screenshots/HomePage.png)
 ![Screenshot](screenshots/FinancePage.png)
 ![Screenshot](screenshots/GradeHistoryPage.png)
 ![Screenshot](screenshots/SubjectCatalogPage.png)
