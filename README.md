@@ -114,15 +114,23 @@ Staff enters min/max ranges per symbol per subject per semester → `assign_symb
 
 ## Requirements
 
-```
 django
 reportlab
 arabic-reshaper
 python-bidi
 pillow
-```
 
 ---
+
+## Screenshots
+
+![Screenshot](screenshots/LoginPage.png)
+![Screenshot](screenshots/HomePage.png)
+![Screenshot](screenshots/FinancePage.png)
+![Screenshot](screenshots/GradeHistoryPage.png)
+![Screenshot](screenshots/SubjectCatalogPage.png)
+
+```
 
 ## License
 
